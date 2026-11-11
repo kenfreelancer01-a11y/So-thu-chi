@@ -14,6 +14,7 @@
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})</script>
 
 
+
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1c2530;--mut:#6b7785;--line:#e6e9ee;--pri:#0f9d7a;--in:#0f9d7a;--out:#e5484d;--warn:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#e8edf2;--mut:#93a0ae;--line:#2a323b;--pri:#2cc29c;--in:#2cc29c;--out:#ff6b70;--warn:#f0b03a;color-scheme:dark}}
@@ -459,15 +460,15 @@ function vAssets(){
   return h+'<p class="mut" style="margin:10px 0 0">Biểu đồ tròn chỉ gồm các khoản tài sản dương. Tiết kiệm tính theo giá trị tạm tính hiện tại.</p></div>';
 }
 function vOv(){if(OVM!='all'&&!mnm(OVM))OVM='all';return ovChips()+vAssets()+vMembers()+'<div style="margin:4px 16px 8px"><b>Kế hoạch &amp; dự đoán'+(OVM=='all'?'':' của '+esc(mnm(OVM)))+'</b></div>'+vPlan()}
-function calc(a){var e=0,o=0;a.forEach(function(t){if(t.type=='out'){if(S.ess[t.cat])e+=t.amt;else o+=t.amt}});return{i:sum(a,'in'),e:e,o:o}}
+function calc(a){var e=0,o=0;a.forEach(function(t){if(t.type=='out'){if(S.ess[t.cat])e+=t.amt;else o+=t.amt}});return{i:sum(a.filter(function(t){return t.cat=='Lương'}),'in'),e:e,o:o}}
 function auto(){var cy=now.getFullYear(),cm=now.getMonth(),arr=[],k,ti=0,te=0,to=0;for(k=1;k<=3;k++){var d=new Date(cy,cm-k,1),a=mtxO(d.getFullYear(),d.getMonth());if(a.length)arr.push(calc(a))}
-var di=arr.length,de=arr.length,c=mtxO(cy,cm);
-arr.forEach(function(x){ti+=x.i;te+=x.e;to+=x.o});
+var di=0,de=arr.length,c=mtxO(cy,cm);
+arr.forEach(function(x){ti+=x.i;if(x.i>0)di++;te+=x.e;to+=x.o});
 if(c.length){var z=calc(c),fr=now.getDate()/new Date(cy,cm+1,0).getDate();if(z.i>0){ti+=z.i;di++}te+=z.e;to+=z.o;de+=arr.length?fr:Math.max(fr,.3)}
 return{n:arr.length+(c.length?1:0),i:di?ti/di:0,e:de?te/de:0,o:de?to/de:0}}
 function planSheet(){
   var A=auto(),P=S.plan,f=function(id,l,k,v){return '<label>'+l+'</label><input id="'+id+'" type="number" step="any" inputmode="decimal" value="'+(P[k]!=null?P[k]:'')+'" placeholder="'+(v==null?'0':'Tự tính: '+Math.round(v))+'">'};
-  sheet('<b>Chỉnh giả định</b><p class="mut">Để trống = app tự tính từ trung bình các tháng gần nhất.</p>'+f('pi','Thu nhập mỗi tháng (đ)','i',A.i)+f('pe','Chi thiết yếu mỗi tháng (đ)','e',A.e)+f('po','Chi khác mỗi tháng (đ)','o',A.o)+f('pg','Thu nhập tăng mỗi năm (%)','g',0)+f('pf','Chi tiêu tăng mỗi năm / lạm phát (%)','f',0)+'<button class="pri" onclick="savePlan()">Lưu</button>');
+  sheet('<b>Chỉnh giả định</b><p class="mut">Để trống = app tự tính từ trung bình các tháng gần nhất.</p>'+f('pi','Lương mỗi tháng (đ)','i',A.i)+f('pe','Chi thiết yếu mỗi tháng (đ)','e',A.e)+f('po','Chi khác mỗi tháng (đ)','o',A.o)+f('pg','Thu nhập tăng mỗi năm (%)','g',0)+f('pf','Chi tiêu tăng mỗi năm / lạm phát (%)','f',0)+'<button class="pri" onclick="savePlan()">Lưu</button>');
 }
 function savePlan(){['i','e','o','g','f'].forEach(function(k){var x=document.getElementById('p'+(k=='i'?'i':k)).value;if(x==='')delete S.plan[k];else S.plan[k]=+x});save();cl();render()}
 function vPlan(){
@@ -476,9 +477,9 @@ function vPlan(){
   for(m=1;m<=HZ;m++){var gi=Math.pow(1+g/100,m/12),gf=Math.pow(1+f/100,m/12),i=I*gi,e=E*gf,o=O*gf,n=i-e-o;b+=n;ti+=i;te+=e;pts.push(b);if(b<0&&!neg)neg=ms(m);rows.push({l:ms(m),i:i,e:e,o:o,n:n,b:b})}
   var mn2=Math.min.apply(0,pts),mx=Math.max.apply(0,pts),rg=(mx-mn2)||1,line=pts.map(function(v,k){return (k/(pts.length-1||1)*300).toFixed(1)+','+(85-(v-mn2)/rg*80).toFixed(1)}).join(' '),zy=85-(0-mn2)/rg*80;
   var h='<div class="card" style="padding:8px"><div style="display:flex;gap:6px;overflow-x:auto">'+[[1,'1 tháng'],[3,'3 tháng'],[6,'6 tháng'],[12,'1 năm'],[24,'2 năm']].map(function(x){return '<button class="chip'+(HZ==x[0]?' es':'')+'" style="white-space:nowrap;padding:6px 12px;font-size:13px" onclick="HZ='+x[0]+';render()">'+x[1]+'</button>'}).join('')+'</div></div>';
-  h+='<div class="card sum"><div><small>Thu dự kiến</small><b class="in">'+vnd(ti)+'</b></div><div><small>Chi thiết yếu cần</small><b style="color:var(--warn)">'+vnd(te)+'</b></div><div><small>Số dư cuối kỳ</small><b class="'+(b<0?'out':'in')+'">'+(b<0?'−':'')+vnd(Math.abs(b))+'</b></div></div>';
+  h+='<div class="card sum"><div><small>Thu dự kiến (lương)</small><b class="in">'+vnd(ti)+'</b></div><div><small>Chi thiết yếu cần</small><b style="color:var(--warn)">'+vnd(te)+'</b></div><div><small>Số dư cuối kỳ</small><b class="'+(b<0?'out':'in')+'">'+(b<0?'−':'')+vnd(Math.abs(b))+'</b></div></div>';
   h+='<div class="card"><b>Số dư dự kiến</b><div class="mut">'+(neg?'⚠ Dự kiến hết tiền dư từ tháng '+neg+'.':'Nguồn tiền dư không bị âm trong kỳ này.')+'</div><svg viewBox="0 0 300 90" width="100%" style="margin-top:6px">'+(mn2<0&&mx>0?'<line x1="0" x2="300" y1="'+zy+'" y2="'+zy+'" stroke="var(--out)" stroke-dasharray="3"/>':'')+'<polyline points="'+line+'" fill="none" stroke="var(--pri)" stroke-width="2"/></svg><div style="display:flex;justify-content:space-between" class="mut"><span>Hiện tại '+sg(pts[0])+'</span><span>Cuối kỳ '+sg(b)+'</span></div></div>';
-  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Giả định</b>'+(OVM=='all'?'<button class="sm" onclick="planSheet()">Chỉnh</button>':'')+'</div><p class="mut" style="margin:6px 0 0">'+(P.i!=null||P.e!=null||P.o!=null?'Có chỉnh tay. ':'Trung bình '+A.n+' tháng gần nhất (gồm tháng này, tính theo số ngày đã qua). ')+'Thu '+vnd(I)+' · thiết yếu '+vnd(E)+' · khác '+vnd(O)+' mỗi tháng.'+(g||f?' Thu tăng '+g+'%/năm, chi tăng '+f+'%/năm.':'')+'</p>'+(Object.keys(S.ess).length?'<p class="mut" style="margin:6px 0 0">Hạng mục thiết yếu: '+Object.keys(S.ess).map(esc).join(', ')+'.</p>':'<p class="mut" style="margin:6px 0 0">Chưa có hạng mục thiết yếu: vào Thống kê để đánh dấu.</p>')+'<p class="mut" style="margin:6px 0 0">Dự đoán tính trên dữ liệu '+(OVM=='all'?'cả gia đình':'riêng tài khoản này')+', chưa gồm lãi sổ tiết kiệm và vay nợ.</p></div>';
+  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Giả định</b>'+(OVM=='all'?'<button class="sm" onclick="planSheet()">Chỉnh</button>':'')+'</div><p class="mut" style="margin:6px 0 0">'+(P.i!=null||P.e!=null||P.o!=null?'Có chỉnh tay. ':'Trung bình '+A.n+' tháng gần nhất (gồm tháng này, tính theo số ngày đã qua). ')+'Lương '+vnd(I)+' · thiết yếu '+vnd(E)+' · khác '+vnd(O)+' mỗi tháng.'+(I==0?' Chưa có khoản thu hạng mục “Lương” nên thu dự kiến = 0: hãy ghi lương hoặc bấm Chỉnh để nhập tay.':' Thu nhập chỉ tính lương, các khoản thu khác không cố định nên không đưa vào.')+(g||f?' Thu tăng '+g+'%/năm, chi tăng '+f+'%/năm.':'')+'</p>'+(Object.keys(S.ess).length?'<p class="mut" style="margin:6px 0 0">Hạng mục thiết yếu: '+Object.keys(S.ess).map(esc).join(', ')+'.</p>':'<p class="mut" style="margin:6px 0 0">Chưa có hạng mục thiết yếu: vào Thống kê để đánh dấu.</p>')+'<p class="mut" style="margin:6px 0 0">Dự đoán tính trên dữ liệu '+(OVM=='all'?'cả gia đình':'riêng tài khoản này')+', chưa gồm lãi sổ tiết kiệm và vay nợ.</p></div>';
   h+='<div class="card" style="overflow-x:auto"><table><tr><th>Tháng</th><th>Thu</th><th>Thiết yếu</th><th>Khác</th><th>Dư</th><th>Số dư</th></tr>';
   rows.forEach(function(r){h+='<tr><td>'+r.l+'</td><td class="in">'+sh(r.i)+'</td><td>'+sh(r.e)+'</td><td>'+sh(r.o)+'</td><td class="'+(r.n<0?'out':'in')+'">'+sg(r.n)+'</td><td class="'+(r.b<0?'out':'')+'"><b>'+sg(r.b)+'</b></td></tr>'});
   return h+'</table></div>';
