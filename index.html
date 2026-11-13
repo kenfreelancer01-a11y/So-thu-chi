@@ -17,6 +17,8 @@
 
 
 
+
+
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1c2530;--mut:#6b7785;--line:#e6e9ee;--pri:#0f9d7a;--in:#0f9d7a;--out:#e5484d;--warn:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#e8edf2;--mut:#93a0ae;--line:#2a323b;--pri:#2cc29c;--in:#2cc29c;--out:#ff6b70;--warn:#f0b03a;color-scheme:dark}}
@@ -119,7 +121,7 @@ async function bak(mode){
   }catch(e){if(e&&e.name=='AbortError')return;alert('Không sao lưu được: '+((e&&e.message)||e))}
 }
 function syncSheet(){
-  sheet('<b>Sao lưu &amp; đồng bộ</b><p class="mut">Mỗi người sao lưu dữ liệu của mình ra 1 file rồi gửi cho người kia (Zalo, Messenger, email…). Người nhận chọn file để đồng bộ: dữ liệu của người gửi được cập nhật, dữ liệu của chính họ giữ nguyên.</p><label>1. Sao lưu dữ liệu của bạn'+(S.lastBk?' (lần cuối '+S.lastBk+')':'')+'</label><button class="pri" style="margin-top:4px" onclick="bak()">⬇ Tải file sao lưu</button>'+(navigator.canShare?'<button class="pri" style="background:var(--bg);color:var(--tx);border:1px solid var(--line);margin-top:8px" onclick="bak(\'share\')">Gửi qua ứng dụng khác</button>':'')+'<label>2. Đồng bộ từ file của người khác'+(S.lastSy?' (lần cuối '+S.lastSy+')':'')+'</label><input type="file" accept=".json,application/json" onchange="impFile(this)"><label>3. Xuất dữ liệu ra Excel</label><button class="pri" style="margin-top:4px" onclick="exportX()">📊 Xuất file Excel (.xlsx)</button><p class="mut" id="imsg">'+(window.IMSG||'')+'</p>');
+  sheet('<b>Sao lưu &amp; đồng bộ</b><button class="pri" style="margin:8px 0" onclick="driveSheet()">☁ Sao lưu / đồng bộ qua Google Drive</button><p class="mut">Mỗi người sao lưu dữ liệu của mình ra 1 file rồi gửi cho người kia (Zalo, Messenger, email…). Người nhận chọn file để đồng bộ: dữ liệu của người gửi được cập nhật, dữ liệu của chính họ giữ nguyên.</p><label>1. Sao lưu dữ liệu của bạn'+(S.lastBk?' (lần cuối '+S.lastBk+')':'')+'</label><button class="pri" style="margin-top:4px" onclick="bak()">⬇ Tải file sao lưu</button>'+(navigator.canShare?'<button class="pri" style="background:var(--bg);color:var(--tx);border:1px solid var(--line);margin-top:8px" onclick="bak(\'share\')">Gửi qua ứng dụng khác</button>':'')+'<label>2. Đồng bộ từ file của người khác'+(S.lastSy?' (lần cuối '+S.lastSy+')':'')+'</label><input type="file" accept=".json,application/json" onchange="impFile(this)"><label>3. Xuất dữ liệu ra Excel</label><button class="pri" style="margin-top:4px" onclick="exportX()">📊 Xuất file Excel (.xlsx)</button><p class="mut" id="imsg">'+(window.IMSG||'')+'</p>');
   window.IMSG='';
 }
 function loadX(){return new Promise(function(ok,no){if(window.XLSX)return ok();var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
@@ -191,6 +193,70 @@ function saveCat(){
   if(CTF){F.cat=n;txForm()}else{cl();render()}
 }
 function delCat(t,n){if(confirm('Xoá mục “'+n+'” khỏi danh sách? Các giao dịch cũ vẫn giữ nguyên hạng mục này.')){S.cats[t]=S.cats[t].filter(function(c){return c.n!=n});save();render()}}
+var GTOK='',GEXP=0,GSC='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+function gmsg(t){var e=document.getElementById('gmsg');if(e)e.textContent=t}
+function gset(k,v){if(k=='gc')S.gcid=v.trim();else S.gmail=v.split(/[,;\s]+/).filter(Boolean);save()}
+function loadG(){return new Promise(function(ok,no){if(window.google&&google.accounts&&google.accounts.oauth2)return ok();var s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.onload=ok;s.onerror=function(){no(new Error('Không tải được Google Sign-In (cần Internet, và phải chạy ở bản trên GitHub Pages).'))};document.head.appendChild(s)})}
+function gAuth(){return new Promise(function(ok,no){
+  if(GTOK&&Date.now()<GEXP)return ok(GTOK);
+  loadG().then(function(){google.accounts.oauth2.initTokenClient({client_id:S.gcid,scope:GSC,callback:function(r){if(r.error)return no(new Error(r.error_description||r.error));GTOK=r.access_token;GEXP=Date.now()+(r.expires_in-60)*1000;ok(GTOK)},error_callback:function(e){no(new Error(e.message||e.type))}}).requestAccessToken({prompt:''})}).catch(no)})}
+async function gf(u,o){var t=await gAuth();o=o||{};o.headers=Object.assign({Authorization:'Bearer '+t},o.headers||{});var r=await fetch(u,o);if(!r.ok){throw new Error('Drive '+r.status+': '+(await r.text()).slice(0,160))}return r}
+function applyData(d){
+  var own=d.members.map(function(m){return m.id}).filter(function(id){return d.from==ME||!mine(id)}),ms=d.members.filter(function(m){return own.indexOf(m.id)>=0}),nt=0,ow=function(x){return own.indexOf(x.by)>=0};
+  if(!ms.length)return null;
+  S.tx=S.tx.filter(function(x){return !ow(x)});S.loans=S.loans.filter(function(x){return !ow(x)});S.sv=S.sv.filter(function(x){return !ow(x)});
+  d.tx.forEach(function(x){if(ow(x)){S.tx.push(x);nt++}});(d.loans||[]).forEach(function(x){if(ow(x))S.loans.push(x)});(d.sv||[]).forEach(function(x){if(ow(x))S.sv.push(x)});
+  ms.forEach(function(m){var i=S.members.map(function(x){return x.id}).indexOf(m.id);if(i>=0)S.members[i]=m;else S.members.push(m)});
+  ['out','in'].forEach(function(t){((d.cats||{})[t]||[]).forEach(function(c){ensureCat(t,c.n,c.e)})});d.tx.forEach(function(x){ensureCat(x.type,x.cat)});
+  if(STASH){['tx','loans','sv'].forEach(function(k){STASH[k].forEach(function(x){if(!S[k].some(function(y){return y.id==x.id&&y.by==x.by}))S[k].push(x)})});STASH=null}
+  return{name:ms.map(function(m){return m.name}).join(', '),nt:nt}}
+function driveSheet(){
+  sheet('<b>Google Drive</b><p class="mut">Sao lưu ghi đè 1 file cố định trong Drive của bạn. Đồng bộ đọc file của người thân đã chia sẻ cho bạn.</p><label>Client ID (tạo 1 lần trên Google Cloud, cả nhà dùng chung)</label><input id="gc" value="'+esc(S.gcid||'')+'" placeholder="xxxx.apps.googleusercontent.com" onchange="gset(\'gc\',this.value)"><label>Chia sẻ file sao lưu của bạn cho (email Google, cách nhau dấu phẩy)</label><input id="gm" value="'+esc((S.gmail||[]).join(', '))+'" placeholder="vo@gmail.com, con@gmail.com" onchange="gset(\'gm\',this.value)"><button class="pri" onclick="gBoth()">🔄 Sao lưu &amp; đồng bộ</button><p style="margin:10px 0 0"><button class="sm" onclick="gBackup()">Chỉ sao lưu</button> <button class="sm" onclick="gSync()">Chỉ đồng bộ</button></p><p class="mut" id="gmsg">'+(S.lastG?'Lần cuối: '+S.lastG:'')+'</p>');
+  loadG().catch(function(){});
+}
+function gread(){var a=document.getElementById('gc'),b=document.getElementById('gm');if(a)gset('gc',a.value);if(b)gset('gm',b.value);if(!S.gcid){gmsg('Hãy nhập Client ID trước.');return false}return true}
+async function gBackup(){
+  if(!gread())return;
+  try{
+    gmsg('Đang đăng nhập Google…');
+    var fn='so-thu-chi-'+ME+'.json',data=pack(),j=await(await gf('https://www.googleapis.com/drive/v3/files?fields=files(id)&q='+encodeURIComponent("name='"+fn+"' and trashed=false and 'me' in owners"))).json(),id=j.files[0]&&j.files[0].id;
+    gmsg('Đang tải lên…');
+    if(id){await gf('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body:data})}
+    else{var b='sotc'+Date.now(),mp='--'+b+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:fn,mimeType:'application/json'})+'\r\n--'+b+'\r\nContent-Type: application/json\r\n\r\n'+data+'\r\n--'+b+'--';
+      id=(await(await gf('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:mp})).json()).id}
+    S.gshared=S.gshared||{};var done=S.gshared[id]||[],bad=[];
+    for(var i=0;i<(S.gmail||[]).length;i++){var em=S.gmail[i];if(done.indexOf(em)>=0)continue;try{await gf('https://www.googleapis.com/drive/v3/files/'+id+'/permissions?sendNotificationEmail=false',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:'reader',type:'user',emailAddress:em})});done.push(em)}catch(e){bad.push(em)}}
+    S.gshared[id]=done;S.lastG=dt()+' (sao lưu)';S.lastBk=dt();save();render();
+    gmsg('✓ Đã sao lưu lên Drive.'+(done.length?' Đã chia sẻ cho: '+done.join(', ')+'.':' Chưa chia sẻ cho ai.')+(bad.length?' Không chia sẻ được: '+bad.join(', ')+'.':''));
+  }catch(e){gmsg('Lỗi: '+(e.message||e))}
+}
+async function gSync(){
+  if(!gread())return;
+  try{
+    gmsg('Đang đăng nhập Google…');
+    var files=[],tok='',n=0;
+    do{var j=await(await gf('https://www.googleapis.com/drive/v3/files?pageSize=200&fields=nextPageToken,files(id,name,modifiedTime,owners(me))&q='+encodeURIComponent("mimeType='application/json' and trashed=false")+(tok?'&pageToken='+tok:''))).json();files=files.concat(j.files||[]);tok=j.nextPageToken;n++}while(tok&&n<5);
+    files=files.filter(function(f){return /^so-thu-chi-.+\.json$/.test(f.name)}).sort(function(a,b){return a.modifiedTime<b.modifiedTime?1:-1});
+    var res=[],restore=null;
+    for(var i=0;i<files.length;i++){var f=files[i];gmsg('Đang đọc '+(i+1)+'/'+files.length+'…');
+      var d=await(await gf('https://www.googleapis.com/drive/v3/files/'+f.id+'?alt=media')).json();
+      if(!d||d.app!='so-thu-chi'||d.from==ME)continue;
+      if(f.owners&&f.owners[0]&&f.owners[0].me){if(!restore)restore=d;continue}
+      var r=applyData(d);if(r)res.push(r)}
+    if(restore){var fm=restore.members.filter(function(m){return m.id==restore.from})[0];
+      if(confirm('Tìm thấy bản sao lưu của chính bạn ("'+(fm?fm.name:'?')+'") trong Drive. Khôi phục sang máy này, không tạo thêm tài khoản?')){restoreAs(restore.from);var r2=applyData(restore);if(r2)res.push(r2)}}
+    S.lastG=dt()+' (đồng bộ)';S.lastSy=dt();save();render();
+    gmsg(res.length?'✓ Đã cập nhật: '+res.map(function(x){return x.name+' ('+x.nt+' giao dịch)'}).join('; ')+'.':'Không có file nào của người khác để đồng bộ. Hãy nhờ họ sao lưu và chia sẻ file cho email của bạn.');
+  }catch(e){gmsg('Lỗi: '+(e.message||e))}
+}
+async function gBoth(){
+  if(!gread())return;
+  await gSync();
+  var m1=document.getElementById('gmsg').textContent;
+  if(/^Lỗi/.test(m1))return;
+  await gBackup();
+  gmsg('① Đồng bộ: '+m1+' ② Sao lưu: '+document.getElementById('gmsg').textContent);
+}
 function impFile(inp){
   var f=inp.files[0];if(!f)return;var r=new FileReader();
   r.onload=function(){
