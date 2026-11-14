@@ -19,6 +19,8 @@
 
 
 
+
+
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1c2530;--mut:#6b7785;--line:#e6e9ee;--pri:#0f9d7a;--in:#0f9d7a;--out:#e5484d;--warn:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#e8edf2;--mut:#93a0ae;--line:#2a323b;--pri:#2cc29c;--in:#2cc29c;--out:#ff6b70;--warn:#f0b03a;color-scheme:dark}}
@@ -57,6 +59,7 @@ nav button{flex:1 0 auto;min-width:70px;padding:10px 0;font-size:12px;color:var(
 nav button span{display:block;font-size:19px}
 nav button.on{color:var(--pri);font-weight:600}
 .fab{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom,0px));right:max(18px,calc(50% - 222px));width:54px;height:54px;border-radius:50%;background:var(--pri);color:#fff;font-size:28px;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:7}
+.fab2{position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));right:max(22px,calc(50% - 218px));width:46px;height:46px;border-radius:50%;background:#1a1f71;box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:7;display:grid;place-items:center}
 .bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:5px}
 .bar div{height:100%;background:var(--pri)}
 .chip{font-size:11px;padding:2px 7px;border-radius:10px;border:1px solid var(--line);color:var(--mut)}
@@ -80,8 +83,8 @@ svg{max-width:100%}
 <header><b>Sổ Thu Chi</b><div class="mb"><button class="ic" id="sy" onclick="sync()" title="Đồng bộ">⟳</button><button class="ic" onclick="mv(-1)">‹</button><span id="ml" style="min-width:84px;text-align:center"></span><button class="ic" onclick="mv(1)">›</button></div></header>
 <main id="main"></main>
 </div>
-<button class="fab" id="fab" onclick="addTx()">+</button>
-<nav><button data-t="log" onclick="tab('log')"><span>📒</span>Sổ</button><button data-t="stat" onclick="tab('stat')"><span>📊</span>Thống kê</button><button data-t="bal" onclick="tab('bal')"><span>💵</span>Số dư</button><button data-t="sav" onclick="tab('sav')"><span>🏦</span>Tiết kiệm</button><button data-t="plan" onclick="tab('plan')"><span>📈</span>Tổng quan</button><button data-t="loan" onclick="tab('loan')"><span>🤝</span>Vay nợ</button><button data-t="fam" onclick="tab('fam')"><span>👨‍👩‍👧</span>Gia đình</button></nav>
+<button class="fab" id="fab" onclick="addTx()">+</button><button class="fab2" id="fab2" onclick="addCc()" title="Chi qua thẻ tín dụng"><svg viewBox="0 0 46 30" width="32" height="21"><rect width="46" height="30" rx="4" fill="#fff"/><rect y="4" width="46" height="4" fill="#1a1f71"/><text x="23" y="24" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-style="italic" font-size="12" fill="#1a1f71">VISA</text></svg></button>
+<nav><button data-t="log" onclick="tab('log')"><span>📒</span>Sổ</button><button data-t="stat" onclick="tab('stat')"><span>📊</span>Thống kê</button><button data-t="bal" onclick="tab('bal')"><span>💵</span>Số dư</button><button data-t="cc" onclick="tab('cc')"><span>💳</span>Tín dụng</button><button data-t="inv" onclick="tab('inv')"><span>💼</span>Đầu tư</button><button data-t="sav" onclick="tab('sav')"><span>🏦</span>Tiết kiệm</button><button data-t="plan" onclick="tab('plan')"><span>📈</span>Tổng quan</button><button data-t="loan" onclick="tab('loan')"><span>🤝</span>Vay nợ</button><button data-t="fam" onclick="tab('fam')"><span>👨‍👩‍👧</span>Gia đình</button></nav>
 <div id="modal"></div>
 <script>
 var OUT=['Ăn uống','Nhà ở','Điện nước','Di chuyển','Học tập','Y tế','Mua sắm','Giải trí','Du lịch','Phụng dưỡng','Khác'];
@@ -91,7 +94,7 @@ var COL=['#e5484d','#f08a24','#e5b800','#3fb950','#12a594','#3e8ed0','#7a5af8','
 var S={tx:[],loans:[],ess:{'Ăn uống':1,'Nhà ở':1,'Điện nước':1,'Di chuyển':1,'Y tế':1,'Học tập':1,'Phụng dưỡng':1}};
 try{var raw=localStorage.getItem('sotc1');if(raw)S=JSON.parse(raw)}catch(e){}
 function save(){try{localStorage.setItem('sotc1',JSON.stringify(S))}catch(e){}}
-S.members=S.members||[];S.sv=S.sv||[];S.plan=S.plan||{};S.cats=S.cats||{out:[],in:[]};S.cats.out.concat(S.cats.in).forEach(function(c){EMO[c.n]=c.e});
+S.members=S.members||[];S.sv=S.sv||[];S.plan=S.plan||{};S.cc=S.cc||[];S.inv=S.inv||[];S.cats=S.cats||{out:[],in:[]};S.cats.out.concat(S.cats.in).forEach(function(c){EMO[c.n]=c.e});
 if(!S.me)S.me='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 S.tx.forEach(function(t){if(!t.by||t.by=='me')t.by=S.me});S.loans.forEach(function(l){if(!l.by||l.by=='me')l.by=S.me});S.members.forEach(function(m){if(m.id=='me')m.id=S.me});
 if(!S.members.some(function(m){return m.id==S.me}))S.members.unshift({id:S.me,name:'Tôi',role:'Khác'});
@@ -107,7 +110,7 @@ function mine(id){var m=S.members.filter(function(x){return x.id==id})[0];return
 function canEd(id){return mine(id)}
 function dt(){var d=new Date();return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+hm().slice(0,5)}
 function fname(){var m=S.members.filter(function(x){return x.id==ME})[0];return 'so-thu-chi-'+((m?m.name:'')||'tai-khoan').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^\w]+/g,'-')+'.json'}
-function pack(){return JSON.stringify({app:'so-thu-chi',v:2,from:ME,at:new Date().toISOString(),members:S.members.filter(function(m){return mine(m.id)}),tx:S.tx.filter(function(t){return mine(t.by)}),loans:S.loans.filter(function(l){return mine(l.by)}),sv:S.sv.filter(function(v){return mine(v.by)}),cats:S.cats})}
+function pack(){return JSON.stringify({app:'so-thu-chi',v:2,from:ME,at:new Date().toISOString(),members:S.members.filter(function(m){return mine(m.id)}),tx:S.tx.filter(function(t){return mine(t.by)}),loans:S.loans.filter(function(l){return mine(l.by)}),sv:S.sv.filter(function(v){return mine(v.by)}),cats:S.cats,cc:S.cc.filter(function(x){return mine(x.by)}),inv:S.inv.filter(function(x){return mine(x.by)})})}
 async function bak(mode){
   var fn=fname(),data=pack();
   try{
@@ -142,7 +145,7 @@ function sheetsData(){
   return[['Giao dịch',['Ngày','Loại','Hạng mục','Số tiền','Thành viên','Ghi chú'],tx],['Theo tháng',['Tháng','Thu','Chi','Còn dư'],mr],['Theo hạng mục',['Hạng mục','Tổng chi','Thiết yếu'],cr],['Vay nợ',['Loại','Người vay/cho vay','Số tiền','Đã trả/nhận','Còn lại','Ngày vay','Hạn trả','Ghi chú','Thành viên'],ln],['Tiết kiệm',['Tên sổ','Số tiền gửi','Lãi suất %/năm','Kỳ hạn (tháng)','Ngày gửi','Đáo hạn','Giá trị hiện tại','Trạng thái','Thành viên'],sv]];
 }
 async function exportX(){
-  var D=sheetsData();
+  var D=sheetsData();D.push(['Đầu tư',['Dự án','Loại','Ngày','Số tiền','Ghi chú','Liên quan số dư','Thành viên'],S.inv.reduce(function(a,p){var m=S.members.filter(function(x){return x.id==p.by})[0];return a.concat(p.ents.map(function(e){return[p.name,e.t=='cap'?'Vốn đầu tư':'Thu nhập',e.date,e.amt,e.note||'',e.bal?(e.t=='cap'?'Trừ số dư':'Cộng số dư'):'Không',m?m.name:'']}))},[])]);D.push(['Tín dụng',['Ngày','Hạng mục','Số tiền','Ghi chú','Thành viên','Trạng thái'],S.cc.slice().sort(function(a,b){return a.date<b.date?-1:1}).map(function(c){var m=S.members.filter(function(x){return x.id==c.by})[0];return[c.date,c.cat,c.amt,c.note||'',m?m.name:'',c.p?'Đã tất toán '+(c.pd||''):'Chưa tất toán']})]);
   try{
     await loadX();
     var wb=XLSX.utils.book_new();
@@ -160,8 +163,8 @@ async function exportX(){
 var STASH=null;
 function restoreAs(nid){
   var o=ME,f=function(a){return a.filter(function(x){return x.by==o}).map(function(x){return Object.assign({},x,{by:nid})})};
-  STASH={tx:f(S.tx),loans:f(S.loans),sv:f(S.sv)};
-  S.tx=S.tx.filter(function(x){return x.by!=o});S.loans=S.loans.filter(function(x){return x.by!=o});S.sv=S.sv.filter(function(x){return x.by!=o});
+  STASH={tx:f(S.tx),loans:f(S.loans),sv:f(S.sv),cc:f(S.cc),inv:f(S.inv)};
+  S.tx=S.tx.filter(function(x){return x.by!=o});S.loans=S.loans.filter(function(x){return x.by!=o});S.sv=S.sv.filter(function(x){return x.by!=o});S.cc=S.cc.filter(function(x){return x.by!=o});S.inv=S.inv.filter(function(x){return x.by!=o});
   S.members.forEach(function(m){if(m.c==o)m.c=nid});
   S.members=S.members.filter(function(m){return m.id!=o});
   ME=UID=S.me=nid;
@@ -170,7 +173,7 @@ function delMember(id){
   var ids=[id].concat(S.members.filter(function(m){return m.c==id}).map(function(m){return m.id}));
   if(!confirm('Xoá thành viên này cùng toàn bộ giao dịch, khoản vay và sổ tiết kiệm của họ khỏi máy này?'))return;
   var k=function(a){return a.filter(function(x){return ids.indexOf(x.by)<0})};
-  S.tx=k(S.tx);S.loans=k(S.loans);S.sv=k(S.sv);
+  S.tx=k(S.tx);S.loans=k(S.loans);S.sv=k(S.sv);S.cc=k(S.cc);S.inv=k(S.inv);
   S.members=S.members.filter(function(m){return ids.indexOf(m.id)<0});
   if(FM!='all'&&ids.indexOf(FM)>=0)FM='all';
   save();cl();render();
@@ -205,10 +208,10 @@ function applyData(d){
   var own=d.members.map(function(m){return m.id}).filter(function(id){return d.from==ME||!mine(id)}),ms=d.members.filter(function(m){return own.indexOf(m.id)>=0}),nt=0,ow=function(x){return own.indexOf(x.by)>=0};
   if(!ms.length)return null;
   S.tx=S.tx.filter(function(x){return !ow(x)});S.loans=S.loans.filter(function(x){return !ow(x)});S.sv=S.sv.filter(function(x){return !ow(x)});
-  d.tx.forEach(function(x){if(ow(x)){S.tx.push(x);nt++}});(d.loans||[]).forEach(function(x){if(ow(x))S.loans.push(x)});(d.sv||[]).forEach(function(x){if(ow(x))S.sv.push(x)});
+  d.tx.forEach(function(x){if(ow(x)){S.tx.push(x);nt++}});(d.loans||[]).forEach(function(x){if(ow(x))S.loans.push(x)});(d.sv||[]).forEach(function(x){if(ow(x))S.sv.push(x)});S.cc=S.cc.filter(function(x){return !ow(x)});(d.cc||[]).forEach(function(x){if(ow(x))S.cc.push(x)});S.inv=S.inv.filter(function(x){return !ow(x)});(d.inv||[]).forEach(function(x){if(ow(x))S.inv.push(x)});
   ms.forEach(function(m){var i=S.members.map(function(x){return x.id}).indexOf(m.id);if(i>=0)S.members[i]=m;else S.members.push(m)});
   ['out','in'].forEach(function(t){((d.cats||{})[t]||[]).forEach(function(c){ensureCat(t,c.n,c.e)})});d.tx.forEach(function(x){ensureCat(x.type,x.cat)});
-  if(STASH){['tx','loans','sv'].forEach(function(k){STASH[k].forEach(function(x){if(!S[k].some(function(y){return y.id==x.id&&y.by==x.by}))S[k].push(x)})});STASH=null}
+  if(STASH){['tx','loans','sv','cc','inv'].forEach(function(k){STASH[k].forEach(function(x){if(!S[k].some(function(y){return y.id==x.id&&y.by==x.by}))S[k].push(x)})});STASH=null}
   return{name:ms.map(function(m){return m.name}).join(', '),nt:nt}}
 function driveSheet(){
   sheet('<b>Google Drive</b><p class="mut">Sao lưu ghi đè 1 file cố định trong Drive của bạn. Đồng bộ đọc file của người thân đã chia sẻ cho bạn.</p><label>Client ID (tạo 1 lần trên Google Cloud, cả nhà dùng chung)</label><input id="gc" value="'+esc(S.gcid||'')+'" placeholder="xxxx.apps.googleusercontent.com" onchange="gset(\'gc\',this.value)"><label>Chia sẻ file sao lưu của bạn cho (email Google, cách nhau dấu phẩy)</label><input id="gm" value="'+esc((S.gmail||[]).join(', '))+'" placeholder="vo@gmail.com, con@gmail.com" onchange="gset(\'gm\',this.value)"><button class="pri" onclick="gBoth()">🔄 Sao lưu &amp; đồng bộ</button><p style="margin:10px 0 0"><button class="sm" onclick="gBackup()">Chỉ sao lưu</button> <button class="sm" onclick="gSync()">Chỉ đồng bộ</button></p><p class="mut" id="gmsg">'+(S.lastG?'Lần cuối: '+S.lastG:'')+'</p>');
@@ -257,6 +260,96 @@ async function gBoth(){
   await gBackup();
   gmsg('① Đồng bộ: '+m1+' ② Sao lưu: '+document.getElementById('gmsg').textContent);
 }
+function vCc(){
+  var all=S.cc.filter(function(c){return FM=='all'||c.by==FM}),open=all.filter(function(c){return !c.p}),sm=function(a){return a.reduce(function(s,c){return s+c.amt},0)},ok=FM=='all'||mine(FM);
+  var tot=sm(open),mo=sm(open.filter(function(c){return mine(c.by)}));
+  var h=chips()+'<div class="card"><div class="mut">Dư nợ thẻ chưa tất toán'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</div><div style="font-size:26px;font-weight:700" class="out">'+vnd(tot)+'</div><div class="mut">Chi qua thẻ không trừ vào số dư cho đến khi tất toán.</div>'+(mo>0&&ok?'<button class="pri" onclick="settle()">Tất toán thẻ ('+vnd(mo)+')</button>':'')+'</div>';
+  var g={};all.forEach(function(c){var k=c.date.slice(0,7);(g[k]=g[k]||[]).push(c)});
+  var ks=Object.keys(g).sort().reverse();
+  if(!ks.length)h+='<div class="card c mut">Chưa có khoản chi qua thẻ. Bấm biểu tượng thẻ phía trên nút + để thêm.</div>';
+  ks.forEach(function(k){
+    var a=g[k],ct={};a.forEach(function(c){ct[c.cat]=(ct[c.cat]||0)+c.amt});
+    var cs=Object.keys(ct).sort(function(x,y){return ct[y]-ct[x]}).map(function(x){return esc(x)+' '+sh(ct[x])}).join(' · '),myop=sm(a.filter(function(c){return !c.p&&mine(c.by)}));
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Tháng '+k.slice(5)+'/'+k.slice(0,4)+'</b><b class="out">'+vnd(sm(a))+'</b></div><div class="mut" style="margin:2px 0 6px">Chưa tất toán '+vnd(sm(a.filter(function(c){return !c.p})))+' · '+cs+'</div>'+(myop>0&&ok?'<button class="sm" onclick="settle(\''+k+'\')">Tất toán tháng này</button>':'');
+    a.sort(function(x,y){return x.date<y.date?1:-1}).forEach(function(c){
+      h+='<div class="row"'+(canEd(c.by)&&!c.p?' onclick="addCc(\''+c.id+'\')"':'')+'><div class="dot" style="background:'+(c.p?'var(--line)':'#1a1f71')+'">'+(EMO[c.cat]||'•')+'</div><div class="grow"><b>'+esc(c.cat)+'</b><small>'+mn(c.by)+esc(c.note||'')+' · '+c.date.slice(8)+'/'+c.date.slice(5,7)+(c.p?' · ✓ đã tất toán'+(c.pd?' '+c.pd.slice(8)+'/'+c.pd.slice(5,7):''):'')+'</small></div><b'+(c.p?' class="mut"':'')+'>'+vnd(c.amt)+'</b></div>'});
+    h+='</div>'});
+  return h;
+}
+function addCc(id){
+  var c=id?S.cc.filter(function(x){return x.id==id})[0]:null;if(id&&!c)return;
+  var d=c||{cat:'Ăn uống',date:TODAY,note:'',amt:''};
+  sheet('<b>'+(c?'Sửa khoản chi thẻ':'Chi qua thẻ tín dụng')+'</b><p class="mut">Khoản này không trừ vào số dư cho đến khi bạn tất toán thẻ.</p><label>Số tiền (đ)</label><input id="ka" type="number" inputmode="numeric" value="'+esc(d.amt)+'"><label>Hạng mục</label><select id="kc">'+catList('out').map(function(x){return '<option'+(x==d.cat?' selected':'')+'>'+esc(x)+'</option>'}).join('')+'</select><label>Ngày</label><input id="kd" type="date" value="'+d.date+'"><label>Ghi chú</label><input id="kn" value="'+esc(d.note)+'" placeholder="Tuỳ chọn"><button class="pri" onclick="saveCc(\''+(id||'')+'\')">Lưu</button>'+(c?'<button class="pri" style="background:var(--out);margin-top:8px" onclick="delCc(\''+id+'\')">Xoá khoản chi</button>':''));
+}
+function saveCc(id){
+  var g=function(x){return document.getElementById(x).value},a=parseFloat(g('ka'));if(!(a>0))return;
+  var o={amt:a,cat:g('kc'),date:g('kd')||TODAY,note:g('kn')};
+  if(id){var c=S.cc.filter(function(x){return x.id==id})[0];if(c)Object.assign(c,o)}
+  else{S.cc.push(Object.assign({id:Date.now(),by:ME},o));T='cc';FM='all'}
+  save();cl();render();
+}
+function delCc(id){if(confirm('Xoá khoản chi qua thẻ này?')){S.cc=S.cc.filter(function(x){return x.id!=id});save();cl();render()}}
+function ccOpen(mo){return S.cc.filter(function(c){return !c.p&&mine(c.by)&&(!mo||c.date.slice(0,7)==mo)})}
+function settle(mo){
+  var cs=ccOpen(mo);if(!cs.length)return;
+  var t=cs.reduce(function(s,c){return s+c.amt},0);
+  sheet('<b>Tất toán thẻ'+(mo?' tháng '+mo.slice(5)+'/'+mo.slice(0,4):'')+'</b><p class="mut">Cần thanh toán: <b>'+vnd(t)+'</b> ('+cs.length+' khoản). Số dư của bạn: <b>'+vnd(avail(ME))+'</b></p><label>Nguồn thanh toán</label><select id="sf"><option value="bal">Trừ từ số dư của tôi</option><option value="ext">Đã trả bằng nguồn khác (không trừ số dư)</option></select><button class="pri" onclick="doSettle(\''+(mo||'')+'\')">Xác nhận tất toán</button>');
+}
+function doSettle(mo){
+  var cs=ccOpen(mo),t=cs.reduce(function(s,c){return s+c.amt},0),from=document.getElementById('sf').value;
+  if(!cs.length)return;
+  if(from=='bal'&&t>avail(ME)){alert('Số dư của bạn không đủ ('+vnd(avail(ME))+'). Hãy chọn nguồn khác hoặc ghi thêm khoản thu.');return}
+  var id=Date.now();
+  cs.forEach(function(c,i){c.p=1;c.pd=TODAY;c.pf=from;if(from=='bal')S.tx.push({id:id+i,by:ME,type:'out',cat:c.cat,amt:c.amt,date:TODAY,note:'Thẻ tín dụng'+(c.note?': '+c.note:'')})});
+  save();cl();render();
+}
+var INVX=null;
+function invCap(p){return p.ents.reduce(function(a,e){return a+(e.t=='cap'?e.amt:0)},0)}
+function invInc(p){return p.ents.reduce(function(a,e){return a+(e.t=='inc'?e.amt:0)},0)}
+function invVal(p){return p.cur!=null&&p.cur!==''?+p.cur:invCap(p)}
+function invById(id){return S.inv.filter(function(p){return p.id==id})[0]}
+function srcOpt(t,b){return '<option value="">Không liên quan đến số dư</option><option value="bal"'+(b?' selected':'')+'>'+(t=='cap'?'Trừ từ số dư của tôi':'Cộng vào số dư của tôi')+'</option>'}
+function vInv(){
+  var L=S.inv.filter(function(p){return FM=='all'||p.by==FM}),cap=0,inc=0,val=0;
+  L.forEach(function(p){cap+=invCap(p);inc+=invInc(p);val+=invVal(p)});
+  var pf=inc+val-cap,h=chips()+'<div class="card sum"><div><small>Vốn đầu tư</small><b>'+vnd(cap)+'</b></div><div><small>Thu nhập đã nhận</small><b class="in">'+vnd(inc)+'</b></div><div><small>Giá trị hiện tại</small><b>'+vnd(val)+'</b></div></div>';
+  h+='<div class="card"><div class="mut">Lợi nhuận tổng (thu nhập + chênh lệch giá trị)</div><div style="font-size:22px;font-weight:700" class="'+(pf<0?'out':'in')+'">'+(pf<0?'−':'+')+vnd(Math.abs(pf))+(cap>0?' <small class="mut">('+(pf/cap*100).toFixed(1)+'%)</small>':'')+'</div></div>';
+  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Dự án đầu tư</b><button class="sm" onclick="addInv()">+ Tạo dự án</button></div>';
+  if(!L.length)h+='<div class="c mut">Chưa có dự án. Bấm “+ Tạo dự án”.</div>';
+  L.forEach(function(p){var c=invCap(p),i=invInc(p),v=invVal(p),g=i+v-c,ed=canEd(p.by);
+    h+='<div class="row" style="align-items:flex-start"><div class="dot" style="background:#f08a24">💼</div><div class="grow"><div style="display:flex;justify-content:space-between"><b>'+esc(p.name)+'</b><b>'+vnd(v)+'</b></div><small>'+mn(p.by)+'Vốn '+vnd(c)+' · Thu nhập '+vnd(i)+'</small><div class="'+(g<0?'out':'in')+'" style="font-size:13px">Lợi nhuận '+(g<0?'−':'+')+vnd(Math.abs(g))+(c>0?' ('+(g/c*100).toFixed(1)+'%)':'')+'</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+(ed?'<button class="sm" onclick="addEnt('+p.id+',\'cap\')">+ Vốn</button><button class="sm" onclick="addEnt('+p.id+',\'inc\')">+ Thu nhập</button>':'')+'<button class="chip" onclick="INVX=INVX=='+p.id+'?null:'+p.id+';render()">'+(INVX==p.id?'Ẩn':'Chi tiết')+'</button>'+(ed?'<button class="chip" onclick="editInv('+p.id+')">Sửa</button>':'')+'</div>';
+    if(INVX==p.id)h+=p.ents.slice().sort(function(a,b){return a.date<b.date?1:-1}).map(function(e){return '<div class="row"'+(ed?' onclick="addEnt('+p.id+',\''+e.t+'\','+e.id+')"':'')+'><div class="grow"><b>'+(e.t=='cap'?'Đầu tư':'Thu nhập')+'</b><small>'+esc(e.note||'')+' · '+fd(e.date)+(e.bal?' · '+(e.t=='cap'?'trừ':'cộng')+' số dư':'')+'</small></div><b class="'+(e.t=='cap'?'':'in')+'">'+(e.t=='cap'?'':'+')+vnd(e.amt)+'</b></div>'}).join('');
+    h+='</div></div>'});
+  return h+'</div>';
+}
+function addInv(){sheet('<b>Tạo dự án đầu tư</b><label>Tên dự án</label><input id="in1" maxlength="40" placeholder="VD: Cổ phiếu, Vàng, Cho thuê nhà"><label>Số tiền đầu tư ban đầu (đ)</label><input id="in2" type="number" inputmode="numeric"><label>Ngày</label><input id="in3" type="date" value="'+TODAY+'"><label>Giá trị hiện tại (tuỳ chọn, đ)</label><input id="in4" type="number" inputmode="numeric" placeholder="Để trống = bằng vốn"><label>Nguồn tiền</label><select id="in5">'+srcOpt('cap')+'</select><button class="pri" onclick="saveInv()">Tạo dự án</button>')}
+function nid(){return Date.now()*1000+Math.floor(Math.random()*1000)}
+function saveInv(){
+  var g=function(x){return document.getElementById(x).value},n=g('in1').trim().replace(/[<>&]/g,''),a=parseFloat(g('in2'));
+  if(!n||!(a>0))return;
+  var bal=g('in5')=='bal',cv=g('in4');
+  if(bal&&a>avail(ME)){alert('Số tiền vượt quá số dư của bạn ('+vnd(avail(ME))+').');return}
+  S.inv.push({id:nid(),by:ME,name:n,cur:cv===''?null:+cv,ents:[{id:nid(),t:'cap',amt:a,date:g('in3')||TODAY,note:'Vốn ban đầu',bal:bal}]});
+  save();cl();render();
+}
+function addEnt(pid,t,eid){
+  var p=invById(pid);if(!p)return;
+  var e=eid?p.ents.filter(function(x){return x.id==eid})[0]:null,d=e||{amt:'',date:TODAY,note:'',bal:false};
+  sheet('<b>'+(e?'Sửa':'Thêm')+' '+(t=='cap'?'khoản đầu tư thêm':'thu nhập')+' · '+esc(p.name)+'</b><label>Số tiền (đ)</label><input id="ea" type="number" inputmode="numeric" value="'+esc(d.amt)+'"><label>Ngày</label><input id="ed" type="date" value="'+d.date+'"><label>Ghi chú</label><input id="en" value="'+esc(d.note)+'" placeholder="Tuỳ chọn"><label>Nguồn tiền</label><select id="es">'+srcOpt(t,d.bal)+'</select><button class="pri" onclick="saveEnt('+pid+',\''+t+'\','+(eid||0)+')">Lưu</button>'+(e?'<button class="pri" style="background:var(--out);margin-top:8px" onclick="delEnt('+pid+','+eid+')">Xoá khoản này</button>':''));
+}
+function saveEnt(pid,t,eid){
+  var p=invById(pid),g=function(x){return document.getElementById(x).value},a=parseFloat(g('ea'));
+  if(!p||!(a>0))return;
+  var bal=g('es')=='bal',old=eid?p.ents.filter(function(x){return x.id==eid})[0]:null;
+  if(bal&&t=='cap'&&a-(old&&old.bal?old.amt:0)>avail(p.by)){alert('Số tiền vượt quá số dư khả dụng ('+vnd(avail(p.by))+').');return}
+  var o={t:t,amt:a,date:g('ed')||TODAY,note:g('en'),bal:bal};
+  if(old)Object.assign(old,o);else p.ents.push(Object.assign({id:nid()},o));
+  INVX=pid;save();cl();render();
+}
+function delEnt(pid,eid){var p=invById(pid);if(p&&confirm('Xoá khoản này?')){p.ents=p.ents.filter(function(x){return x.id!=eid});save();cl();render()}}
+function editInv(pid){var p=invById(pid);if(!p)return;sheet('<b>Sửa dự án</b><label>Tên dự án</label><input id="in1" maxlength="40" value="'+esc(p.name)+'"><label>Giá trị hiện tại (đ, để trống = bằng vốn)</label><input id="in4" type="number" inputmode="numeric" value="'+(p.cur!=null?p.cur:'')+'"><button class="pri" onclick="saveInvEdit('+pid+')">Lưu</button><button class="pri" style="background:var(--out);margin-top:8px" onclick="delInv('+pid+')">Xoá dự án</button>')}
+function saveInvEdit(pid){var p=invById(pid),g=function(x){return document.getElementById(x).value},n=g('in1').trim().replace(/[<>&]/g,'');if(!p||!n)return;p.name=n;var cv=g('in4');p.cur=cv===''?null:+cv;save();cl();render()}
+function delInv(pid){if(confirm('Xoá dự án và toàn bộ khoản đầu tư, thu nhập của nó? Số dư liên quan sẽ được tính lại.')){S.inv=S.inv.filter(function(p){return p.id!=pid});save();cl();render()}}
 function impFile(inp){
   var f=inp.files[0];if(!f)return;var r=new FileReader();
   r.onload=function(){
@@ -269,8 +362,8 @@ function impFile(inp){
       if(!ms.length){document.getElementById('imsg').textContent='File này là dữ liệu của chính bạn nên không có gì để cập nhật.';return}
       S.tx=S.tx.filter(function(t){return own.indexOf(t.by)<0});S.loans=S.loans.filter(function(l){return own.indexOf(l.by)<0});
       d.tx.forEach(function(t){if(own.indexOf(t.by)>=0){S.tx.push(t);nt++}});
-      (d.loans||[]).forEach(function(l){if(own.indexOf(l.by)>=0){S.loans.push(l);nl++}});S.sv=S.sv.filter(function(v){return own.indexOf(v.by)<0});(d.sv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.sv.push(v)});
-      if(STASH){[['tx','by'],['loans','by'],['sv','by']].forEach(function(p){STASH[p[0]].forEach(function(x){if(!S[p[0]].some(function(y){return y.id==x.id&&y.by==x.by}))S[p[0]].push(x)})});STASH=null}
+      (d.loans||[]).forEach(function(l){if(own.indexOf(l.by)>=0){S.loans.push(l);nl++}});S.sv=S.sv.filter(function(v){return own.indexOf(v.by)<0});(d.sv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.sv.push(v)});S.cc=S.cc.filter(function(v){return own.indexOf(v.by)<0});(d.cc||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.cc.push(v)});S.inv=S.inv.filter(function(v){return own.indexOf(v.by)<0});(d.inv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.inv.push(v)});
+      if(STASH){[['tx','by'],['loans','by'],['sv','by'],['cc','by'],['inv','by']].forEach(function(p){STASH[p[0]].forEach(function(x){if(!S[p[0]].some(function(y){return y.id==x.id&&y.by==x.by}))S[p[0]].push(x)})});STASH=null}
       ms.forEach(function(m){var i=S.members.map(function(x){return x.id}).indexOf(m.id);if(i>=0)S.members[i]=m;else S.members.push(m)});
       ['out','in'].forEach(function(t){((d.cats||{})[t]||[]).forEach(function(c){ensureCat(t,c.n,c.e)})});d.tx.forEach(function(x){ensureCat(x.type,x.cat)});
       S.lastSy=dt();save();render();
@@ -348,12 +441,12 @@ function mv(d){M+=d;if(M<0){M=11;Y--}if(M>11){M=0;Y++}SD=null;render()}
 function tab(t){T=t;render()}
 function render(){
   var g=GATE&&!(GATE=='out'&&S.localOK);
-  document.getElementById('fab').style.display=g?'none':'';
+  document.getElementById('fab').style.display=g?'none':'';document.getElementById('fab2').style.display=g?'none':'';
   document.querySelector('nav').style.display=g?'none':'';
   if(g){document.getElementById('main').innerHTML=vGate();return}
   document.getElementById('ml').textContent='Tháng '+(M+1)+'/'+Y;
   document.querySelectorAll('nav button').forEach(function(b){b.classList.toggle('on',b.dataset.t==T)});
-  document.getElementById('main').innerHTML=({log:vLog,stat:vStat,bal:vBal,sav:vSav,plan:vOv,fam:vFam,loan:vLoan}[T])();
+  document.getElementById('main').innerHTML=({log:vLog,stat:vStat,bal:vBal,sav:vSav,plan:vOv,cc:vCc,inv:vInv,fam:vFam,loan:vLoan}[T])();
 }
 function txRow(t){
   return '<div class="row"'+(canEd(t.by)?' onclick="editTx('+t.id+')"':'')+'><div class="dot" style="background:'+(t.type=='in'?'var(--in)':COL[Math.max(0,catList('out').indexOf(t.cat))%10])+'">'+(EMO[t.cat]||'•')+'</div><div class="grow"><b>'+esc(t.cat)+'</b><small>'+mn(t.by)+esc(t.note||'')+' · '+t.date.slice(8)+'/'+t.date.slice(5,7)+'</small></div><b class="'+t.type+'">'+(t.type=='in'?'+':'−')+vnd(t.amt)+'</b></div>';
@@ -483,7 +576,7 @@ function dd(x){return new Date(x+'T00:00:00')}
 function mat(v){if(!(v.term>0))return '';var m=dd(v.date);m.setMonth(m.getMonth()+v.term);return ymd(m)}
 function svDays(v){var a=dd(v.date),e=dd(v.closed?v.cdate:TODAY);if(!v.closed&&v.term>0){var m=dd(mat(v));if(e>m)e=m}return Math.max(0,Math.round((e-a)/864e5))}
 function svVal(v){if(v.closed&&v.payout!=null)return v.payout;return v.amt+v.amt*v.rate/100*svDays(v)/365}
-function avail(id){var all=!id||id=='all',F=function(x){return all||x.by==id},d=0;S.sv.filter(F).forEach(function(v){d+=v.amt;if(v.closed)d-=svVal(v)});return S.members.filter(function(m){return all||m.id==id}).reduce(function(a,m){return a+(+m.open||0)},0)+sum(S.tx.filter(F),'in')-sum(S.tx.filter(F),'out')-d}
+function avail(id){var all=!id||id=='all',F=function(x){return all||x.by==id},d=0;S.inv.filter(F).forEach(function(p){p.ents.forEach(function(e){if(e.bal)d+=e.t=='cap'?e.amt:-e.amt})});S.sv.filter(F).forEach(function(v){d+=v.amt;if(v.closed)d-=svVal(v)});return S.members.filter(function(m){return all||m.id==id}).reduce(function(a,m){return a+(+m.open||0)},0)+sum(S.tx.filter(F),'in')-sum(S.tx.filter(F),'out')-d}
 function meM(){return S.members.filter(function(x){return x.id==ME})[0]}
 function openSheet(){sheet('<b>Số dư ban đầu</b><p class="mut">Số tiền bạn đang có trước khi bắt đầu ghi sổ (tiền mặt, tài khoản…). Dùng để tính nguồn tiền dư.</p><label>Số tiền (đ)</label><input id="so" type="number" inputmode="numeric" value="'+((meM()||{}).open||'')+'"><button class="pri" onclick="saveOpen()">Lưu</button>')}
 function saveOpen(){var m=meM();if(m)m.open=+document.getElementById('so').value||0;save();cl();render()}
@@ -527,7 +620,7 @@ function mtxO(y,m){return mtx(y,m).filter(function(t){return OVM=='all'||t.by==O
 function nw(id){var all=!id||id=='all',F=function(x){return all||x.by==id},s=0,l=0,b=0;
   S.sv.filter(F).forEach(function(v){if(!v.closed)s+=svVal(v)});
   S.loans.filter(F).forEach(function(x){var r=x.amt-paid(x);if(r>0){if(x.kind=='lend')l+=r;else b+=r}});
-  var c=avail(id);return{c:c,s:s,l:l,b:b,n:c+s+l-b}}
+  var iv=S.inv.filter(F).reduce(function(a,p){return a+invVal(p)},0),cd=S.cc.filter(function(x){return !x.p&&F(x)}).reduce(function(a,x){return a+x.amt},0),c=avail(id);return{c:c,s:s,l:l,b:b,d:cd,i:iv,n:c+s+l+iv-b-cd}}
 function ovChips(){return '<div class="card" style="padding:8px"><div style="display:flex;gap:6px;overflow-x:auto">'+[{id:'all',name:'Cả gia đình'}].concat(S.members).map(function(m){return '<button class="chip'+(OVM==m.id?' es':'')+'" style="white-space:nowrap;padding:6px 12px;font-size:13px" onclick="OVM=\''+m.id+'\';render()">'+esc(m.name)+'</button>'}).join('')+'</div></div>'}
 function vMembers(){
   if(OVM!='all'||S.members.length<2)return '';
@@ -540,13 +633,13 @@ function vMembers(){
 }
 function vAssets(){
   var Z=nw(OVM),cash=Z.c,sv=Z.s,ln=Z.l,bw=Z.b;
-  var net=cash+sv+ln-bw,it=[['Số dư (tiền dư khả dụng)',cash,'#3e8ed0'],['Tiết kiệm',sv,'#0f9d7a'],['Cho vay (phải thu)',ln,'#7a5af8'],['Đi vay (phải trả)',-bw,'#e5484d']];
-  var pos=it.slice(0,3).filter(function(x){return x[1]>0}),tp=pos.reduce(function(a,x){return a+x[1]},0),acc=0,cs='<circle r="15.9155" cx="20" cy="20" fill="none" stroke="var(--line)" stroke-width="6"/>',mx=1;
+  var net=cash+sv+ln+Z.i-bw-Z.d,it=[['Số dư (tiền dư khả dụng)',cash,'#3e8ed0'],['Tiết kiệm',sv,'#0f9d7a'],['Cho vay (phải thu)',ln,'#7a5af8'],['Đầu tư (giá trị hiện tại)',Z.i,'#f08a24'],['Đi vay (phải trả)',-bw,'#e5484d'],['Dư nợ thẻ tín dụng',-Z.d,'#d6409f']];
+  var pos=it.slice(0,4).filter(function(x){return x[1]>0}),tp=pos.reduce(function(a,x){return a+x[1]},0),acc=0,cs='<circle r="15.9155" cx="20" cy="20" fill="none" stroke="var(--line)" stroke-width="6"/>',mx=1;
   pos.forEach(function(x){var p=x[1]/tp*100;cs+='<circle r="15.9155" cx="20" cy="20" fill="none" stroke="'+x[2]+'" stroke-width="6" stroke-dasharray="'+p+' '+(100-p)+'" stroke-dashoffset="'+(-acc)+'" transform="rotate(-90 20 20)"/>';acc+=p});
   it.forEach(function(x){mx=Math.max(mx,Math.abs(x[1]))});
-  var h='<div class="card"><div class="mut">'+(OVM=='all'?'Tổng tài sản hiện có (ròng)':'Tài sản ròng của '+esc(mnm(OVM)))+'</div><div style="font-size:26px;font-weight:700" class="'+(net<0?'out':'in')+'">'+(net<0?'−':'')+vnd(Math.abs(net))+'</div><div class="mut">= số dư + tiết kiệm + cho vay − đi vay</div>';
+  var h='<div class="card"><div class="mut">'+(OVM=='all'?'Tổng tài sản hiện có (ròng)':'Tài sản ròng của '+esc(mnm(OVM)))+'</div><div style="font-size:26px;font-weight:700" class="'+(net<0?'out':'in')+'">'+(net<0?'−':'')+vnd(Math.abs(net))+'</div><div class="mut">= số dư + tiết kiệm + cho vay + đầu tư − đi vay − nợ thẻ tín dụng</div>';
   h+='<svg viewBox="0 0 40 40" width="170" height="170" style="display:block;margin:8px auto">'+cs+'<text x="20" y="19.5" text-anchor="middle" font-size="2.8" fill="var(--mut)">Tài sản ròng</text><text x="20" y="24" text-anchor="middle" font-size="3.4" font-weight="700" fill="var(--tx)">'+sg(net)+'</text></svg>';
-  it.forEach(function(x,i){var p=i<3&&tp>0&&x[1]>0?' <small class="mut">'+Math.round(x[1]/tp*100)+'%</small>':'';
+  it.forEach(function(x,i){var p=i<4&&tp>0&&x[1]>0?' <small class="mut">'+Math.round(x[1]/tp*100)+'%</small>':'';
     h+='<div style="margin-top:10px"><div style="display:flex;justify-content:space-between"><span><span style="color:'+x[2]+'">■</span> '+x[0]+p+'</span><b class="'+(x[1]<0?'out':'')+'">'+(x[1]<0?'−':'')+vnd(Math.abs(x[1]))+'</b></div><div class="bar"><div style="width:'+Math.abs(x[1])/mx*100+'%;background:'+x[2]+'"></div></div></div>'});
   return h+'<p class="mut" style="margin:10px 0 0">Biểu đồ tròn chỉ gồm các khoản tài sản dương. Tiết kiệm tính theo giá trị tạm tính hiện tại.</p></div>';
 }
