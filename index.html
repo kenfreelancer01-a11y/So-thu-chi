@@ -26,6 +26,7 @@
 
 
 
+
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1c2530;--mut:#6b7785;--line:#e6e9ee;--pri:#0f9d7a;--in:#0f9d7a;--out:#e5484d;--warn:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#e8edf2;--mut:#93a0ae;--line:#2a323b;--pri:#2cc29c;--in:#2cc29c;--out:#ff6b70;--warn:#f0b03a;color-scheme:dark}}
@@ -278,6 +279,15 @@ async function gBoth(){
 function ccMap(){var m={};S.stl.forEach(function(t){t.items.forEach(function(it){m[it.b+'|'+it.i]=t})});return m}
 function isPaid(c,m){return !!(c.p||(m||ccMap())[c.by+'|'+c.id])}
 function ccPayDate(c,m){var t=(m||ccMap())[c.by+'|'+c.id];return t?t.date:(c.pd||'')}
+function undoLegacy(date,by){
+  var m=ccMap(),cs=S.cc.filter(function(c){return c.p&&!m[c.by+'|'+c.id]&&(c.pd||'')==date&&c.by==by});
+  if(!cs.length||!confirm('Huỷ tất toán '+cs.length+' giao dịch thẻ (tổng '+vnd(cs.reduce(function(a,c){return a+c.amt},0))+')? Các khoản chi tương ứng đã chuyển vào Sổ sẽ bị xoá và giao dịch quay lại chưa tất toán.'))return;
+  cs.forEach(function(c){
+    var k=S.tx.findIndex(function(t){return t.by==c.by&&t.type=='out'&&t.cat==c.cat&&t.amt==c.amt&&t.date==(c.pd||t.date)&&(t.note||'').indexOf('Thẻ tín dụng')==0});
+    if(c.pf!='ext'&&k>=0)S.tx.splice(k,1);
+    delete c.p;delete c.pd;delete c.pf});
+  save();render();
+}
 function vCc(){
   var m=ccMap(),all=S.cc.filter(function(c){return FM=='all'||c.by==FM}),open=all.filter(function(c){return !isPaid(c,m)}),sm=function(a){return a.reduce(function(s,c){return s+c.amt},0)};
   var anyOpen=S.cc.some(function(c){return !isPaid(c,m)});
@@ -289,11 +299,14 @@ function vCc(){
     var a=g[k],ct={},y=+k.slice(0,4),mo=+k.slice(5);a.forEach(function(c){ct[c.cat]=(ct[c.cat]||0)+c.amt});
     var cs=Object.keys(ct).sort(function(x,z){return ct[z]-ct[x]}).map(function(x){return esc(x)+' '+sh(ct[x])}).join(' · '),op=a.filter(function(c){return !isPaid(c,m)});
     h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Tháng '+k.slice(5)+'/'+k.slice(0,4)+'</b><b class="out">'+vnd(sm(a))+'</b></div><div class="mut" style="margin:2px 0 6px">Chưa tất toán '+vnd(sm(op))+' · '+cs+'</div>'+(op.length?'<button class="sm" onclick="stmt(\''+k+'-01\',\''+k+'-'+pad(new Date(y,mo,0).getDate())+'\')">Sao kê tháng này</button>':'');
-    a.sort(function(x,z){return x.date<z.date?1:-1}).forEach(function(c){var pd=isPaid(c,m);
-      h+='<div class="row"'+(canEd(c.by)&&!pd?' onclick="addCc(\''+c.id+'\')"':'')+'><div class="dot" style="background:'+(pd?'var(--line)':'#1a1f71')+'">'+(EMO[c.cat]||'•')+'</div><div class="grow"><b>'+esc(c.cat)+'</b><small>'+mn(c.by)+esc(c.note||'')+' · '+c.date.slice(8)+'/'+c.date.slice(5,7)+(pd?' · ✓ đã tất toán'+(ccPayDate(c,m)?' '+ccPayDate(c,m).slice(8)+'/'+ccPayDate(c,m).slice(5,7):''):'')+'</small></div><b'+(pd?' class="mut"':'')+'>'+vnd(c.amt)+'</b></div>'});
+    a.sort(function(x,z){return x.date<z.date?1:-1}).forEach(function(c){
+      var pd=isPaid(c,m),st=pd?m[c.by+'|'+c.id]:null,undo=pd&&(st?canEd(st.by):canEd(c.by)),click=!pd&&canEd(c.by)?'addCc(\''+c.id+'\')':(undo?(st?'delStl('+st.id+')':'undoLegacy(\''+(c.pd||'')+'\',\''+c.by+'\')'):'');
+      h+='<div class="row"'+(click?' onclick="'+click+'"':'')+'><div class="dot" style="background:'+(pd?'var(--line)':'#1a1f71')+'">'+(EMO[c.cat]||'•')+'</div><div class="grow"><b>'+esc(c.cat)+'</b><small>'+mn(c.by)+esc(c.note||'')+' · '+c.date.slice(8)+'/'+c.date.slice(5,7)+(pd?' · ✓ đã tất toán'+(ccPayDate(c,m)?' '+ccPayDate(c,m).slice(8)+'/'+ccPayDate(c,m).slice(5,7):'')+(undo?' · chạm để huỷ':''):'')+'</small></div><b'+(pd?' class="mut"':'')+'>'+vnd(c.amt)+'</b></div>'});
     h+='</div>'});
-  var hs=S.stl.slice().sort(function(a,b){return a.date<b.date?1:-1});
-  if(hs.length)h+='<div class="card"><b>Lịch sử tất toán thẻ</b>'+hs.map(function(t){return '<div class="row"><div class="grow"><b>'+vnd(t.total)+'</b><small>'+mn(t.by)+fd(t.from)+' → '+fd(t.to)+' · '+t.items.length+' giao dịch · tất toán '+fd(t.date)+'</small></div>'+(canEd(t.by)?'<button class="chip" onclick="delStl('+t.id+')">Huỷ tất toán</button>':'')+'</div>'}).join('')+'</div>';
+  var hs=S.stl.slice().sort(function(a,b){return a.date<b.date?1:-1}),lg={};
+  S.cc.forEach(function(c){if(c.p&&!m[c.by+'|'+c.id]&&(FM=='all'||c.by==FM)){var k=(c.pd||'')+'|'+c.by;(lg[k]=lg[k]||{date:c.pd||'',by:c.by,items:[]}).items.push(c)}});
+  var ls=Object.keys(lg).map(function(k){return lg[k]}).sort(function(a,b){return a.date<b.date?1:-1});
+  if(hs.length||ls.length)h+='<div class="card"><b>Lịch sử tất toán thẻ</b>'+hs.map(function(t){return '<div class="row"><div class="grow"><b>'+vnd(t.total)+'</b><small>'+mn(t.by)+fd(t.from)+' → '+fd(t.to)+' · '+t.items.length+' giao dịch · tất toán '+fd(t.date)+'</small></div>'+(canEd(t.by)?'<button class="chip" onclick="delStl('+t.id+')">Huỷ tất toán</button>':'')+'</div>'}).join('')+ls.map(function(x){return '<div class="row"><div class="grow"><b>'+vnd(sm(x.items))+'</b><small>'+mn(x.by)+x.items.length+' giao dịch · tất toán '+(x.date?fd(x.date):'')+' (bản cũ)</small></div>'+(canEd(x.by)?'<button class="chip" onclick="undoLegacy(\''+x.date+'\',\''+x.by+'\')">Huỷ tất toán</button>':'')+'</div>'}).join('')+'</div>';
   return h;
 }
 var CCF={};
