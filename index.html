@@ -12,6 +12,20 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sổ Thu Chi">
 <script>if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1c2530;--mut:#6b7785;--line:#e6e9ee;--pri:#0f9d7a;--in:#0f9d7a;--out:#e5484d;--warn:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#e8edf2;--mut:#93a0ae;--line:#2a323b;--pri:#2cc29c;--in:#2cc29c;--out:#ff6b70;--warn:#f0b03a;color-scheme:dark}}
@@ -85,7 +99,7 @@ var COL=['#e5484d','#f08a24','#e5b800','#3fb950','#12a594','#3e8ed0','#7a5af8','
 var S={tx:[],loans:[],ess:{'Ăn uống':1,'Nhà ở':1,'Điện nước':1,'Di chuyển':1,'Y tế':1,'Học tập':1,'Phụng dưỡng':1}};
 try{var raw=localStorage.getItem('sotc1');if(raw)S=JSON.parse(raw)}catch(e){}
 function save(){try{localStorage.setItem('sotc1',JSON.stringify(S))}catch(e){}}
-S.members=S.members||[];S.sv=S.sv||[];S.plan=S.plan||{};S.cc=S.cc||[];S.inv=S.inv||[];S.cats=S.cats||{out:[],in:[]};S.cats.out.concat(S.cats.in).forEach(function(c){EMO[c.n]=c.e});
+S.members=S.members||[];S.sv=S.sv||[];S.plan=S.plan||{};S.cc=S.cc||[];S.inv=S.inv||[];S.stl=S.stl||[];S.cats=S.cats||{out:[],in:[]};S.cats.out.concat(S.cats.in).forEach(function(c){EMO[c.n]=c.e});
 if(!S.me)S.me='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 S.tx.forEach(function(t){if(!t.by||t.by=='me')t.by=S.me});S.loans.forEach(function(l){if(!l.by||l.by=='me')l.by=S.me});S.members.forEach(function(m){if(m.id=='me')m.id=S.me});
 if(!S.members.some(function(m){return m.id==S.me}))S.members.unshift({id:S.me,name:'Tôi',role:'Khác'});
@@ -101,7 +115,7 @@ function mine(id){var m=S.members.filter(function(x){return x.id==id})[0];return
 function canEd(id){return mine(id)}
 function dt(){var d=new Date();return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+hm().slice(0,5)}
 function fname(){var m=S.members.filter(function(x){return x.id==ME})[0];return 'so-thu-chi-'+((m?m.name:'')||'tai-khoan').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/[^\w]+/g,'-')+'.json'}
-function pack(){return JSON.stringify({app:'so-thu-chi',v:2,from:ME,at:new Date().toISOString(),members:S.members.filter(function(m){return mine(m.id)}),tx:S.tx.filter(function(t){return mine(t.by)}),loans:S.loans.filter(function(l){return mine(l.by)}),sv:S.sv.filter(function(v){return mine(v.by)}),cats:S.cats,cc:S.cc.filter(function(x){return mine(x.by)}),inv:S.inv.filter(function(x){return mine(x.by)})})}
+function pack(){return JSON.stringify({app:'so-thu-chi',v:2,from:ME,at:new Date().toISOString(),members:S.members.filter(function(m){return mine(m.id)}),tx:S.tx.filter(function(t){return mine(t.by)}),loans:S.loans.filter(function(l){return mine(l.by)}),sv:S.sv.filter(function(v){return mine(v.by)}),cats:S.cats,cc:S.cc.filter(function(x){return mine(x.by)}),inv:S.inv.filter(function(x){return mine(x.by)}),stl:S.stl.filter(function(x){return mine(x.by)})})}
 async function bak(mode){
   var fn=fname(),data=pack();
   try{
@@ -136,7 +150,7 @@ function sheetsData(){
   return[['Giao dịch',['Ngày','Loại','Hạng mục','Số tiền','Thành viên','Ghi chú'],tx],['Theo tháng',['Tháng','Thu','Chi','Còn dư'],mr],['Theo hạng mục',['Hạng mục','Tổng chi','Thiết yếu'],cr],['Vay nợ',['Loại','Người vay/cho vay','Số tiền','Đã trả/nhận','Còn lại','Ngày vay','Hạn trả','Ghi chú','Thành viên'],ln],['Tiết kiệm',['Tên sổ','Số tiền gửi','Lãi suất %/năm','Kỳ hạn (tháng)','Ngày gửi','Đáo hạn','Giá trị hiện tại','Trạng thái','Thành viên'],sv]];
 }
 async function exportX(){
-  var D=sheetsData();D.push(['Đầu tư',['Dự án','Loại','Ngày','Số tiền','Ghi chú','Liên quan số dư','Thành viên'],S.inv.reduce(function(a,p){var m=S.members.filter(function(x){return x.id==p.by})[0];return a.concat(p.ents.map(function(e){return[p.name,e.t=='cap'?'Vốn đầu tư':e.t=='exp'?'Chi phí':'Thu nhập',e.date,e.amt,e.note||'',e.bal?(e.t=='inc'?'Cộng số dư':'Trừ số dư'):'Không',m?m.name:'']}))},[])]);D.push(['Tín dụng',['Ngày','Hạng mục','Số tiền','Ghi chú','Thành viên','Trạng thái'],S.cc.slice().sort(function(a,b){return a.date<b.date?-1:1}).map(function(c){var m=S.members.filter(function(x){return x.id==c.by})[0];return[c.date,c.cat,c.amt,c.note||'',m?m.name:'',c.p?'Đã tất toán '+(c.pd||''):'Chưa tất toán']})]);
+  var D=sheetsData();D.push(['Đầu tư',['Dự án','Loại','Ngày','Số tiền','Ghi chú','Liên quan số dư','Thành viên'],S.inv.reduce(function(a,p){var m=S.members.filter(function(x){return x.id==p.by})[0];return a.concat(p.ents.map(function(e){return[p.name,e.t=='cap'?'Vốn đầu tư':e.t=='exp'?'Chi phí':'Thu nhập',e.date,e.amt,e.note||'',e.bal?(e.t=='inc'?'Cộng số dư':'Trừ số dư'):'Không',m?m.name:'']}))},[])]);D.push(['Tín dụng',['Ngày','Hạng mục','Số tiền','Ghi chú','Thành viên','Trạng thái'],S.cc.slice().sort(function(a,b){return a.date<b.date?-1:1}).map(function(c){var m=S.members.filter(function(x){return x.id==c.by})[0];return[c.date,c.cat,c.amt,c.note||'',m?m.name:'',isPaid(c)?'Đã tất toán '+ccPayDate(c):'Chưa tất toán']})]);
   try{
     await loadX();
     var wb=XLSX.utils.book_new();
@@ -164,8 +178,8 @@ function subNav(){
 var STASH=null;
 function restoreAs(nid){
   var o=ME,f=function(a){return a.filter(function(x){return x.by==o}).map(function(x){return Object.assign({},x,{by:nid})})};
-  STASH={tx:f(S.tx),loans:f(S.loans),sv:f(S.sv),cc:f(S.cc),inv:f(S.inv)};
-  S.tx=S.tx.filter(function(x){return x.by!=o});S.loans=S.loans.filter(function(x){return x.by!=o});S.sv=S.sv.filter(function(x){return x.by!=o});S.cc=S.cc.filter(function(x){return x.by!=o});S.inv=S.inv.filter(function(x){return x.by!=o});
+  STASH={tx:f(S.tx),loans:f(S.loans),sv:f(S.sv),cc:f(S.cc),inv:f(S.inv),stl:f(S.stl)};
+  S.tx=S.tx.filter(function(x){return x.by!=o});S.loans=S.loans.filter(function(x){return x.by!=o});S.sv=S.sv.filter(function(x){return x.by!=o});S.cc=S.cc.filter(function(x){return x.by!=o});S.inv=S.inv.filter(function(x){return x.by!=o});S.stl=S.stl.filter(function(x){return x.by!=o});
   S.members.forEach(function(m){if(m.c==o)m.c=nid});
   S.members=S.members.filter(function(m){return m.id!=o});
   ME=UID=S.me=nid;
@@ -174,7 +188,7 @@ function delMember(id){
   var ids=[id].concat(S.members.filter(function(m){return m.c==id}).map(function(m){return m.id}));
   if(!confirm('Xoá thành viên này cùng toàn bộ giao dịch, khoản vay và sổ tiết kiệm của họ khỏi máy này?'))return;
   var k=function(a){return a.filter(function(x){return ids.indexOf(x.by)<0})};
-  S.tx=k(S.tx);S.loans=k(S.loans);S.sv=k(S.sv);S.cc=k(S.cc);S.inv=k(S.inv);
+  S.tx=k(S.tx);S.loans=k(S.loans);S.sv=k(S.sv);S.cc=k(S.cc);S.inv=k(S.inv);S.stl=k(S.stl);
   S.members=S.members.filter(function(m){return ids.indexOf(m.id)<0});
   if(FM!='all'&&ids.indexOf(FM)>=0)FM='all';
   save();cl();render();
@@ -209,10 +223,10 @@ function applyData(d){
   var own=d.members.map(function(m){return m.id}).filter(function(id){return d.from==ME||!mine(id)}),ms=d.members.filter(function(m){return own.indexOf(m.id)>=0}),nt=0,ow=function(x){return own.indexOf(x.by)>=0};
   if(!ms.length)return null;
   S.tx=S.tx.filter(function(x){return !ow(x)});S.loans=S.loans.filter(function(x){return !ow(x)});S.sv=S.sv.filter(function(x){return !ow(x)});
-  d.tx.forEach(function(x){if(ow(x)){S.tx.push(x);nt++}});(d.loans||[]).forEach(function(x){if(ow(x))S.loans.push(x)});(d.sv||[]).forEach(function(x){if(ow(x))S.sv.push(x)});S.cc=S.cc.filter(function(x){return !ow(x)});(d.cc||[]).forEach(function(x){if(ow(x))S.cc.push(x)});S.inv=S.inv.filter(function(x){return !ow(x)});(d.inv||[]).forEach(function(x){if(ow(x))S.inv.push(x)});
+  d.tx.forEach(function(x){if(ow(x)){S.tx.push(x);nt++}});(d.loans||[]).forEach(function(x){if(ow(x))S.loans.push(x)});(d.sv||[]).forEach(function(x){if(ow(x))S.sv.push(x)});S.cc=S.cc.filter(function(x){return !ow(x)});(d.cc||[]).forEach(function(x){if(ow(x))S.cc.push(x)});S.inv=S.inv.filter(function(x){return !ow(x)});(d.inv||[]).forEach(function(x){if(ow(x))S.inv.push(x)});S.stl=S.stl.filter(function(x){return !ow(x)});(d.stl||[]).forEach(function(x){if(ow(x))S.stl.push(x)});
   ms.forEach(function(m){var i=S.members.map(function(x){return x.id}).indexOf(m.id);if(i>=0)S.members[i]=m;else S.members.push(m)});
   ['out','in'].forEach(function(t){((d.cats||{})[t]||[]).forEach(function(c){ensureCat(t,c.n,c.e)})});d.tx.forEach(function(x){ensureCat(x.type,x.cat)});
-  if(STASH){['tx','loans','sv','cc','inv'].forEach(function(k){STASH[k].forEach(function(x){if(!S[k].some(function(y){return y.id==x.id&&y.by==x.by}))S[k].push(x)})});STASH=null}
+  if(STASH){['tx','loans','sv','cc','inv','stl'].forEach(function(k){STASH[k].forEach(function(x){if(!S[k].some(function(y){return y.id==x.id&&y.by==x.by}))S[k].push(x)})});STASH=null}
   return{name:ms.map(function(m){return m.name}).join(', '),nt:nt}}
 function driveSheet(){
   sheet('<b>Google Drive</b><p class="mut">Sao lưu ghi đè 1 file cố định trong Drive của bạn. Đồng bộ đọc file của người thân đã chia sẻ cho bạn.</p><label>Client ID (tạo 1 lần trên Google Cloud, cả nhà dùng chung)</label><input id="gc" value="'+esc(S.gcid||'')+'" placeholder="xxxx.apps.googleusercontent.com" onchange="gset(\'gc\',this.value)"><label>Chia sẻ file sao lưu của bạn cho (email Google, cách nhau dấu phẩy)</label><input id="gm" value="'+esc((S.gmail||[]).join(', '))+'" placeholder="vo@gmail.com, con@gmail.com" onchange="gset(\'gm\',this.value)"><button class="pri" onclick="gBoth()">🔄 Sao lưu &amp; đồng bộ</button><p style="margin:10px 0 0"><button class="sm" onclick="gBackup()">Chỉ sao lưu</button> <button class="sm" onclick="gSync()">Chỉ đồng bộ</button></p><p class="mut" id="gmsg">'+(S.lastG?'Lần cuối: '+S.lastG:'')+'</p>');
@@ -261,20 +275,25 @@ async function gBoth(){
   await gBackup();
   gmsg('① Đồng bộ: '+m1+' ② Sao lưu: '+document.getElementById('gmsg').textContent);
 }
+function ccMap(){var m={};S.stl.forEach(function(t){t.items.forEach(function(it){m[it.b+'|'+it.i]=t})});return m}
+function isPaid(c,m){return !!(c.p||(m||ccMap())[c.by+'|'+c.id])}
+function ccPayDate(c,m){var t=(m||ccMap())[c.by+'|'+c.id];return t?t.date:(c.pd||'')}
 function vCc(){
-  var all=S.cc.filter(function(c){return FM=='all'||c.by==FM}),open=all.filter(function(c){return !c.p}),sm=function(a){return a.reduce(function(s,c){return s+c.amt},0)},ok=FM=='all'||mine(FM);
-  var tot=sm(open),mo=sm(open.filter(function(c){return mine(c.by)}));
-  var h=chips()+'<div class="card"><div class="mut">Dư nợ thẻ chưa tất toán'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</div><div style="font-size:26px;font-weight:700" class="out">'+vnd(tot)+'</div><div class="mut">Chi qua thẻ không trừ vào số dư cho đến khi tất toán.</div>'+(mo>0&&ok?'<button class="pri" onclick="settle()">Tất toán thẻ ('+vnd(mo)+')</button>':'')+'</div>';
+  var m=ccMap(),all=S.cc.filter(function(c){return FM=='all'||c.by==FM}),open=all.filter(function(c){return !isPaid(c,m)}),sm=function(a){return a.reduce(function(s,c){return s+c.amt},0)};
+  var anyOpen=S.cc.some(function(c){return !isPaid(c,m)});
+  var h=chips()+'<div class="card"><div class="mut">Dư nợ thẻ chưa tất toán'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</div><div style="font-size:26px;font-weight:700" class="out">'+vnd(sm(open))+'</div><div class="mut">Chi qua thẻ không trừ vào số dư cho đến khi tất toán. Khi sao kê, app lấy giao dịch của tất cả thành viên.</div>'+(anyOpen?'<button class="pri" onclick="stmt()">Sao kê &amp; tất toán thẻ</button>':'')+'</div>';
   var g={};all.forEach(function(c){var k=c.date.slice(0,7);(g[k]=g[k]||[]).push(c)});
   var ks=Object.keys(g).sort().reverse();
   if(!ks.length)h+='<div class="card c mut">Chưa có khoản chi qua thẻ. Bấm biểu tượng thẻ phía trên nút + để thêm.</div>';
   ks.forEach(function(k){
-    var a=g[k],ct={};a.forEach(function(c){ct[c.cat]=(ct[c.cat]||0)+c.amt});
-    var cs=Object.keys(ct).sort(function(x,y){return ct[y]-ct[x]}).map(function(x){return esc(x)+' '+sh(ct[x])}).join(' · '),myop=sm(a.filter(function(c){return !c.p&&mine(c.by)}));
-    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Tháng '+k.slice(5)+'/'+k.slice(0,4)+'</b><b class="out">'+vnd(sm(a))+'</b></div><div class="mut" style="margin:2px 0 6px">Chưa tất toán '+vnd(sm(a.filter(function(c){return !c.p})))+' · '+cs+'</div>'+(myop>0&&ok?'<button class="sm" onclick="settle(\''+k+'\')">Tất toán tháng này</button>':'');
-    a.sort(function(x,y){return x.date<y.date?1:-1}).forEach(function(c){
-      h+='<div class="row"'+(canEd(c.by)&&!c.p?' onclick="addCc(\''+c.id+'\')"':'')+'><div class="dot" style="background:'+(c.p?'var(--line)':'#1a1f71')+'">'+(EMO[c.cat]||'•')+'</div><div class="grow"><b>'+esc(c.cat)+'</b><small>'+mn(c.by)+esc(c.note||'')+' · '+c.date.slice(8)+'/'+c.date.slice(5,7)+(c.p?' · ✓ đã tất toán'+(c.pd?' '+c.pd.slice(8)+'/'+c.pd.slice(5,7):''):'')+'</small></div><b'+(c.p?' class="mut"':'')+'>'+vnd(c.amt)+'</b></div>'});
+    var a=g[k],ct={},y=+k.slice(0,4),mo=+k.slice(5);a.forEach(function(c){ct[c.cat]=(ct[c.cat]||0)+c.amt});
+    var cs=Object.keys(ct).sort(function(x,z){return ct[z]-ct[x]}).map(function(x){return esc(x)+' '+sh(ct[x])}).join(' · '),op=a.filter(function(c){return !isPaid(c,m)});
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Tháng '+k.slice(5)+'/'+k.slice(0,4)+'</b><b class="out">'+vnd(sm(a))+'</b></div><div class="mut" style="margin:2px 0 6px">Chưa tất toán '+vnd(sm(op))+' · '+cs+'</div>'+(op.length?'<button class="sm" onclick="stmt(\''+k+'-01\',\''+k+'-'+pad(new Date(y,mo,0).getDate())+'\')">Sao kê tháng này</button>':'');
+    a.sort(function(x,z){return x.date<z.date?1:-1}).forEach(function(c){var pd=isPaid(c,m);
+      h+='<div class="row"'+(canEd(c.by)&&!pd?' onclick="addCc(\''+c.id+'\')"':'')+'><div class="dot" style="background:'+(pd?'var(--line)':'#1a1f71')+'">'+(EMO[c.cat]||'•')+'</div><div class="grow"><b>'+esc(c.cat)+'</b><small>'+mn(c.by)+esc(c.note||'')+' · '+c.date.slice(8)+'/'+c.date.slice(5,7)+(pd?' · ✓ đã tất toán'+(ccPayDate(c,m)?' '+ccPayDate(c,m).slice(8)+'/'+ccPayDate(c,m).slice(5,7):''):'')+'</small></div><b'+(pd?' class="mut"':'')+'>'+vnd(c.amt)+'</b></div>'});
     h+='</div>'});
+  var hs=S.stl.slice().sort(function(a,b){return a.date<b.date?1:-1});
+  if(hs.length)h+='<div class="card"><b>Lịch sử tất toán thẻ</b>'+hs.map(function(t){return '<div class="row"><div class="grow"><b>'+vnd(t.total)+'</b><small>'+mn(t.by)+fd(t.from)+' → '+fd(t.to)+' · '+t.items.length+' giao dịch · tất toán '+fd(t.date)+'</small></div>'+(canEd(t.by)?'<button class="chip" onclick="delStl('+t.id+')">Huỷ tất toán</button>':'')+'</div>'}).join('')+'</div>';
   return h;
 }
 var CCF={};
@@ -296,19 +315,38 @@ function saveCc(id){
   save();cl();render();
 }
 function delCc(id){if(confirm('Xoá khoản chi qua thẻ này?')){S.cc=S.cc.filter(function(x){return x.id!=id});save();cl();render()}}
-function ccOpen(mo){return S.cc.filter(function(c){return !c.p&&mine(c.by)&&(!mo||c.date.slice(0,7)==mo)})}
-function settle(mo){
-  var cs=ccOpen(mo);if(!cs.length)return;
-  var t=cs.reduce(function(s,c){return s+c.amt},0);
-  sheet('<b>Tất toán thẻ'+(mo?' tháng '+mo.slice(5)+'/'+mo.slice(0,4):'')+'</b><p class="mut">Cần thanh toán: <b>'+vnd(t)+'</b> ('+cs.length+' khoản). Số dư của bạn: <b>'+vnd(avail(ME))+'</b></p><label>Nguồn thanh toán</label><select id="sf"><option value="bal">Trừ từ số dư của tôi</option><option value="ext">Đã trả bằng nguồn khác (không trừ số dư)</option></select><button class="pri" onclick="doSettle(\''+(mo||'')+'\')">Xác nhận tất toán</button>');
+var ISP=[];
+function stmt(f,t){
+  var m=ccMap(),op=S.cc.filter(function(c){return !isPaid(c,m)}).sort(function(a,b){return a.date<b.date?-1:1});
+  if(!op.length)return;
+  var last=S.stl.reduce(function(a,x){return x.to>a?x.to:a},'');
+  if(!f)f=last?ymd(new Date(dd(last).getTime()+864e5)):op[0].date;
+  if(!t)t=TODAY;
+  ISP=op;
+  sheet('<b>Sao kê &amp; tất toán thẻ</b><p class="mut">Gồm giao dịch thẻ chưa tất toán của <b>tất cả thành viên</b>. Chọn kỳ sao kê, rồi tick thêm hoặc bỏ giao dịch cho khớp với sao kê ngân hàng.</p><div style="display:flex;gap:8px"><div style="flex:1"><label>Từ ngày</label><input id="sf" type="date" value="'+f+'" onchange="stmtRange()"></div><div style="flex:1"><label>Đến ngày</label><input id="st" type="date" value="'+t+'" onchange="stmtRange()"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b id="sst"></b><span><button class="chip" onclick="stmtAll(1)">Chọn hết</button> <button class="chip" onclick="stmtAll(0)">Bỏ hết</button></span></div><div>'+op.map(function(c,i){return '<label class="row" style="margin:0;color:var(--tx);font-size:14px"><input type="checkbox" id="k'+i+'" style="width:20px;height:20px;padding:0;flex:none" onchange="stmtSum()"><div class="grow"><b>'+esc(c.cat)+'</b><small>'+mn(c.by)+esc(c.note||'')+' · '+fd(c.date)+'</small></div><b>'+vnd(c.amt)+'</b></label>'}).join('')+'</div><p class="mut" id="sbal"></p><button class="pri" onclick="doStmt()">Xác nhận tất toán</button>');
+  stmtRange();
 }
-function doSettle(mo){
-  var cs=ccOpen(mo),t=cs.reduce(function(s,c){return s+c.amt},0),from=document.getElementById('sf').value;
-  if(!cs.length)return;
-  if(from=='bal'&&t>avail(ME)){alert('Số dư của bạn không đủ ('+vnd(avail(ME))+'). Hãy chọn nguồn khác hoặc ghi thêm khoản thu.');return}
-  var id=Date.now();
-  cs.forEach(function(c,i){c.p=1;c.pd=TODAY;c.pf=from;if(from=='bal')S.tx.push({id:id+i,by:ME,type:'out',cat:c.cat,amt:c.amt,date:TODAY,note:'Thẻ tín dụng'+(c.note?': '+c.note:'')})});
+function stmtRange(){var f=document.getElementById('sf').value,t=document.getElementById('st').value;ISP.forEach(function(c,i){document.getElementById('k'+i).checked=(!f||c.date>=f)&&(!t||c.date<=t)});stmtSum()}
+function stmtAll(v){ISP.forEach(function(c,i){document.getElementById('k'+i).checked=!!v});stmtSum()}
+function stmtSel(){return ISP.filter(function(c,i){return document.getElementById('k'+i).checked})}
+function stmtSum(){
+  var sel=stmtSel(),t=sel.reduce(function(a,c){return a+c.amt},0),e=document.getElementById('sst'),b=document.getElementById('sbal'),av=avail(ME);
+  if(e)e.textContent='Đã chọn '+sel.length+'/'+ISP.length+' · '+vnd(t);
+  if(b)b.textContent='Số dư của bạn: '+vnd(av)+(t>av?' (không đủ để tất toán)':'')+'. Tiền được trừ từ số dư của bạn và các giao dịch được chuyển về Sổ theo hạng mục.';
+}
+function doStmt(){
+  var sel=stmtSel();if(!sel.length){alert('Hãy chọn ít nhất một giao dịch.');return}
+  var t=sel.reduce(function(a,c){return a+c.amt},0),av=avail(ME);
+  if(t>av){alert('Số dư của bạn không đủ ('+vnd(av)+'). Hãy bỏ bớt giao dịch hoặc ghi thêm khoản thu.');return}
+  var sid=nid(),ids=[];
+  sel.forEach(function(c,i){var id=sid+1+i;ids.push(id);S.tx.push({id:id,by:ME,type:'out',cat:c.cat,amt:c.amt,date:c.date,note:'Thẻ tín dụng'+(c.by!=ME?' ('+mnm(c.by)+')':'')+(c.note?': '+c.note:''),stl:sid})});
+  S.stl.push({id:sid,by:ME,date:TODAY,from:document.getElementById('sf').value||sel[0].date,to:document.getElementById('st').value||TODAY,items:sel.map(function(c){return{b:c.by,i:c.id}}),total:t,txids:ids});
   save();cl();render();
+}
+function delStl(id){
+  var t=S.stl.filter(function(x){return x.id==id})[0];
+  if(!t||!confirm('Huỷ tất toán '+vnd(t.total)+'? Các giao dịch quay lại trạng thái chưa tất toán và các khoản chi tương ứng bị xoá khỏi Sổ.'))return;
+  S.tx=S.tx.filter(function(x){return (t.txids||[]).indexOf(x.id)<0});S.stl=S.stl.filter(function(x){return x.id!=id});save();render();
 }
 var INVX=null;
 function invCap(p){return p.ents.reduce(function(a,e){return a+(e.t=='cap'?e.amt:0)},0)}
@@ -316,6 +354,7 @@ function invInc(p){return p.ents.reduce(function(a,e){return a+(e.t=='inc'?e.amt
 function invVal(p){return p.cur!=null&&p.cur!==''?+p.cur:invCap(p)}
 function invById(id){return S.inv.filter(function(p){return p.id==id})[0]}
 function srcOpt(t,b){var a=t=='inc'?['Chưa chuyển về số dư','Chuyển về số dư của tôi']:t=='exp'?['Không lấy từ số dư (đã trả từ nguồn khác)','Trừ từ số dư của tôi']:t=='cap'?['Không liên quan đến số dư','Trừ từ số dư của tôi']:['Không liên quan đến số dư','Có (đầu tư, chi phí: trừ; thu nhập: cộng)'];return '<option value="">'+a[0]+'</option><option value="bal"'+(b?' selected':'')+'>'+a[1]+'</option>'}
+var INVP='all';
 function invExp(p){return p.ents.reduce(function(a,e){return a+(e.t=='exp'?e.amt:0)},0)}
 function vInvTable(){
   var L=S.inv.filter(function(p){return OVM=='all'||p.by==OVM});
@@ -347,7 +386,7 @@ function invStats(L){
 function entRow(p,e,ed,call){
   var lab=e.t=='cap'?'Đầu tư':e.t=='inc'?'Thu nhập':'Chi phí',sign=e.t=='cap'?'':e.t=='inc'?'+':'−',cls=e.t=='inc'?'in':e.t=='exp'?'out':'',
   st=e.t=='inc'?(e.bal?' · đã chuyển về số dư'+(e.pd?' '+fd(e.pd):''):' · chưa chuyển về số dư'):(e.bal?' · trừ số dư':(e.t=='exp'?' · không trừ số dư':''));
-  return '<div class="row"'+(ed?' onclick="'+call+'"':'')+'><div class="grow"><b>'+lab+'</b><small style="white-space:normal">'+esc(e.note||'')+' · '+fd(e.date)+st+'</small>'+(ed&&e.t=='inc'&&!e.bal?'<button class="sm" style="margin-top:4px" onclick="event.stopPropagation();xferInc('+p.id+','+e.id+')">Chuyển về số dư</button>':'')+'</div><b class="'+cls+'">'+sign+vnd(e.amt)+'</b></div>';
+  return '<div class="row"'+(ed?' onclick="'+call+'"':'')+'><div class="grow"><b>'+lab+'</b><small>'+esc(e.note||'')+' · '+fd(e.date)+st+'</small>'+(ed&&e.t=='inc'&&!e.bal?'<button class="sm" style="margin-top:4px" onclick="event.stopPropagation();xferInc('+p.id+','+e.id+')">Chuyển về số dư</button>':'')+'</div><b class="'+cls+'">'+sign+vnd(e.amt)+'</b></div>';
 }
 function xferInc(pid,eid){
   var p=invById(pid),e=p&&p.ents.filter(function(x){return x.id==eid})[0];
@@ -431,8 +470,8 @@ function impFile(inp){
       if(!ms.length){document.getElementById('imsg').textContent='File này là dữ liệu của chính bạn nên không có gì để cập nhật.';return}
       S.tx=S.tx.filter(function(t){return own.indexOf(t.by)<0});S.loans=S.loans.filter(function(l){return own.indexOf(l.by)<0});
       d.tx.forEach(function(t){if(own.indexOf(t.by)>=0){S.tx.push(t);nt++}});
-      (d.loans||[]).forEach(function(l){if(own.indexOf(l.by)>=0){S.loans.push(l);nl++}});S.sv=S.sv.filter(function(v){return own.indexOf(v.by)<0});(d.sv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.sv.push(v)});S.cc=S.cc.filter(function(v){return own.indexOf(v.by)<0});(d.cc||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.cc.push(v)});S.inv=S.inv.filter(function(v){return own.indexOf(v.by)<0});(d.inv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.inv.push(v)});
-      if(STASH){[['tx','by'],['loans','by'],['sv','by'],['cc','by'],['inv','by']].forEach(function(p){STASH[p[0]].forEach(function(x){if(!S[p[0]].some(function(y){return y.id==x.id&&y.by==x.by}))S[p[0]].push(x)})});STASH=null}
+      (d.loans||[]).forEach(function(l){if(own.indexOf(l.by)>=0){S.loans.push(l);nl++}});S.sv=S.sv.filter(function(v){return own.indexOf(v.by)<0});(d.sv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.sv.push(v)});S.cc=S.cc.filter(function(v){return own.indexOf(v.by)<0});(d.cc||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.cc.push(v)});S.inv=S.inv.filter(function(v){return own.indexOf(v.by)<0});(d.inv||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.inv.push(v)});S.stl=S.stl.filter(function(v){return own.indexOf(v.by)<0});(d.stl||[]).forEach(function(v){if(own.indexOf(v.by)>=0)S.stl.push(v)});
+      if(STASH){[['tx','by'],['loans','by'],['sv','by'],['cc','by'],['inv','by'],['stl','by']].forEach(function(p){STASH[p[0]].forEach(function(x){if(!S[p[0]].some(function(y){return y.id==x.id&&y.by==x.by}))S[p[0]].push(x)})});STASH=null}
       ms.forEach(function(m){var i=S.members.map(function(x){return x.id}).indexOf(m.id);if(i>=0)S.members[i]=m;else S.members.push(m)});
       ['out','in'].forEach(function(t){((d.cats||{})[t]||[]).forEach(function(c){ensureCat(t,c.n,c.e)})});d.tx.forEach(function(x){ensureCat(x.type,x.cat)});
       S.lastSy=dt();save();render();
@@ -473,18 +512,6 @@ function memSel(){
   return '<label>Thành viên</label><select id="fm">'+o.map(function(m){return '<option value="'+esc(m.id)+'"'+(F.by==m.id?' selected':'')+'>'+esc(m.name)+'</option>'}).join('')+'</select>';
 }
 function mn(id){var m=S.members.filter(function(x){return x.id==id})[0];return m?esc(m.name)+' · ':''}
-function mvm(y,m){var k=pm(y,m),o=0,b=0,F=function(x){return FM=='all'||x.by==FM},mo=function(d){return (d||'').slice(0,7)==k};
-  S.sv.filter(F).forEach(function(v){if(mo(v.date))o+=v.amt;if(v.closed&&mo(v.cdate))b+=svVal(v)});
-  S.inv.filter(F).forEach(function(p){p.ents.forEach(function(e){if(!e.bal)return;if(e.t=='inc'){if(mo(e.pd||e.date))b+=e.amt}else if(mo(e.date))o+=e.amt})});
-  return {o:o,b:b,n:b-o}}
-function balTo(y,m){var k=pm(y,m),F=function(x){return FM=='all'||x.by==FM},le=function(d){return (d||'').slice(0,7)<=k},
-  s=S.members.filter(function(q){return FM=='all'||q.id==FM}).reduce(function(a,q){return a+(+q.open||0)},0);
-  S.tx.filter(F).forEach(function(t){if(le(t.date))s+=t.type=='in'?t.amt:-t.amt});
-  S.sv.filter(F).forEach(function(v){if(le(v.date))s-=v.amt;if(v.closed&&le(v.cdate))s+=svVal(v)});
-  S.inv.filter(F).forEach(function(p){p.ents.forEach(function(e){if(!e.bal)return;if(e.t=='inc'){if(le(e.pd||e.date))s+=e.amt}else if(le(e.date))s-=e.amt})});
-  return s}
-function balPrev(y,m){var d=new Date(y,m-1,1);return balTo(d.getFullYear(),d.getMonth())}
-function sgn(v){return (v<0?'−':'+')+vnd(Math.abs(v))}
 function ftx(y,m){return mtx(y,m).filter(function(t){return FM=='all'||t.by==FM})}
 function chips(){return '<div class="card" style="padding:8px"><div style="display:flex;gap:6px;overflow-x:auto">'+[{id:'all',name:'Cả gia đình'}].concat(S.members).map(function(m){return '<button class="chip'+(FM==m.id?' es':'')+'" style="white-space:nowrap;padding:6px 12px;font-size:13px" onclick="FM=\''+m.id+'\';render()">'+esc(m.name)+'</button>'}).join('')+'</div></div>'}
 function memForm(id,self){
@@ -533,8 +560,8 @@ function txRow(t){
   return '<div class="row"'+(canEd(t.by)?' onclick="editTx('+t.id+')"':'')+'><div class="dot" style="background:'+(t.type=='in'?'var(--in)':COL[Math.max(0,catList('out').indexOf(t.cat))%10])+'">'+(EMO[t.cat]||'•')+'</div><div class="grow"><b>'+esc(t.cat)+'</b><small>'+mn(t.by)+esc(t.note||'')+' · '+t.date.slice(8)+'/'+t.date.slice(5,7)+'</small></div><b class="'+t.type+'">'+(t.type=='in'?'+':'−')+vnd(t.amt)+'</b></div>';
 }
 function vLog(){
-  var a=ftx(Y,M),i=sum(a,'in'),o=sum(a,'out'),x=mvm(Y,M),pv=balPrev(Y,M),net=i-o+x.n,df=pv+net;
-  var h=chips()+'<div class="card sum"><div><small>Thu</small><b class="in">'+vnd(i)+'</b></div><div><small>Chi</small><b class="out">'+vnd(o)+'</b></div><div><small>Chênh lệch</small><b>'+(df<0?'−':'')+vnd(Math.abs(df))+'</b></div></div>'+'<div class="mut" style="padding:0 6px 8px;font-size:12px">Chênh lệch = số dư các tháng trước '+(pv<0?'−':'')+vnd(Math.abs(pv))+' + tháng này '+sgn(net)+' (Thu − Chi'+(x.n?(x.n<0?' − chuyển vào tiết kiệm/đầu tư ':' + tiền về từ tiết kiệm/đầu tư ')+vnd(Math.abs(x.n)):'')+').</div>';
+  var a=ftx(Y,M),i=sum(a,'in'),o=sum(a,'out');
+  var h=chips()+'<div class="card sum"><div><small>Thu</small><b class="in">'+vnd(i)+'</b></div><div><small>Chi</small><b class="out">'+vnd(o)+'</b></div><div><small>Chênh lệch</small><b>'+(i-o<0?'−':'')+vnd(Math.abs(i-o))+'</b></div></div>';
   h+='<div class="card"><div class="cal">';
   ['T2','T3','T4','T5','T6','T7','CN'].forEach(function(d){h+='<div class="h">'+d+'</div>'});
   var off=(new Date(Y,M,1).getDay()+6)%7,n=new Date(Y,M+1,0).getDate(),k;
@@ -663,13 +690,13 @@ function openSheet(){sheet('<b>Số dư ban đầu</b><p class="mut">Số tiền
 function saveOpen(){var m=meM();if(m)m.open=+document.getElementById('so').value||0;save();cl();render()}
 function vBal(){
   var rows=[],k,mx=1;
-  for(k=0;k<12;k++){var d=new Date(now.getFullYear(),now.getMonth()-k,1),a=ftx(d.getFullYear(),d.getMonth()),i=sum(a,'in'),o=sum(a,'out'),x=mvm(d.getFullYear(),d.getMonth());if(a.length||x.n||k<1)rows.push({l:(d.getMonth()+1)+'/'+d.getFullYear(),i:i,o:o,n:x.n,r:i-o+x.n,cb:balTo(d.getFullYear(),d.getMonth()),pv:balPrev(d.getFullYear(),d.getMonth())})}
-  rows.forEach(function(r){mx=Math.max(mx,Math.abs(r.cb))});
+  for(k=0;k<12;k++){var d=new Date(now.getFullYear(),now.getMonth()-k,1),a=ftx(d.getFullYear(),d.getMonth()),i=sum(a,'in'),o=sum(a,'out');if(a.length||k<1)rows.push({l:(d.getMonth()+1)+'/'+d.getFullYear(),i:i,o:o,r:i-o})}
+  rows.forEach(function(r){mx=Math.max(mx,Math.abs(r.r))});
   var c=rows[0],sv=S.sv.filter(function(v){return !v.closed&&(FM=='all'||v.by==FM)}).reduce(function(a,v){return a+v.amt},0);
-  var h=chips()+'<div class="card"><div class="mut">Còn dư tháng '+c.l+'</div><div style="font-size:26px;font-weight:700" class="'+(c.cb<0?'out':'in')+'">'+(c.cb<0?'−':'')+vnd(Math.abs(c.cb))+'</div><div class="mut">Số dư các tháng trước '+(c.pv<0?'−':'')+vnd(Math.abs(c.pv))+' + Thu '+vnd(c.i)+' − Chi '+vnd(c.o)+(c.n?(c.n<0?' − chuyển vào tiết kiệm/đầu tư ':' + tiền về từ tiết kiệm/đầu tư ')+vnd(Math.abs(c.n)):'')+'</div>'+(c.i?'<div class="mut">Tháng này giữ lại '+Math.round(c.r/c.i*100)+'% thu nhập ('+sgn(c.r)+')</div>':'')+'</div>';
-  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Nguồn tiền dư khả dụng'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</b>'+(FM=='all'||FM==ME?'<button class="sm" onclick="openSheet()">Số dư ban đầu</button>':'')+'</div><div style="font-size:22px;font-weight:700;margin:6px 0">'+vnd(avail(FM))+'</div><div class="mut">= số dư ban đầu + tổng thu − tổng chi − tiền đã chuyển vào sổ tiết kiệm và đầu tư (bằng Còn dư tháng này). Đang gửi tiết kiệm: '+vnd(sv)+'.</div><button class="pri" onclick="tab(\'sav\');addSav()">Chuyển vào sổ tiết kiệm</button></div>';
-  h+='<div class="card"><b>Còn dư cuối mỗi tháng</b>';
-  rows.forEach(function(r){h+='<div class="row"><div class="grow"><b>Tháng '+r.l+'</b><div class="bar"><div style="width:'+Math.abs(r.cb)/mx*100+'%;background:'+(r.cb<0?'var(--out)':'var(--in)')+'"></div></div><small class="mut" style="white-space:normal">Thay đổi trong tháng '+sgn(r.r)+(r.n?' (gồm '+(r.n<0?'chuyển vào tiết kiệm/đầu tư −':'tiền về từ tiết kiệm/đầu tư +')+vnd(Math.abs(r.n))+')':'')+'</small></div><b class="'+(r.cb<0?'out':'in')+'">'+(r.cb<0?'−':'')+vnd(Math.abs(r.cb))+'</b></div>'});
+  var h=chips()+'<div class="card"><div class="mut">Còn dư tháng '+c.l+'</div><div style="font-size:26px;font-weight:700" class="'+(c.r<0?'out':'in')+'">'+(c.r<0?'−':'')+vnd(Math.abs(c.r))+'</div><div class="mut">Thu '+vnd(c.i)+' − Chi '+vnd(c.o)+(c.i?' · giữ lại '+Math.round(c.r/c.i*100)+'% thu nhập':'')+'</div></div>';
+  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Nguồn tiền dư khả dụng'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</b>'+(FM=='all'||FM==ME?'<button class="sm" onclick="openSheet()">Số dư ban đầu</button>':'')+'</div><div style="font-size:22px;font-weight:700;margin:6px 0">'+vnd(avail(FM))+'</div><div class="mut">= số dư ban đầu + tổng thu − tổng chi − tiền đã chuyển vào sổ tiết kiệm. Đang gửi tiết kiệm: '+vnd(sv)+'.</div><button class="pri" onclick="tab(\'sav\');addSav()">Chuyển vào sổ tiết kiệm</button></div>';
+  h+='<div class="card"><b>Còn dư theo tháng</b>';
+  rows.forEach(function(r){h+='<div class="row"><div class="grow"><b>Tháng '+r.l+'</b><div class="bar"><div style="width:'+Math.abs(r.r)/mx*100+'%;background:'+(r.r<0?'var(--out)':'var(--in)')+'"></div></div></div><b class="'+(r.r<0?'out':'in')+'">'+(r.r<0?'−':'+')+vnd(Math.abs(r.r))+'</b></div>'});
   return h+'</div>';
 }
 function addSav(){sheet('<b>Mở sổ tiết kiệm</b><p class="mut">Tiền gửi chỉ được trừ từ số dư của chính bạn. Khả dụng: <b>'+vnd(avail(ME))+'</b></p><label>Tên sổ</label><input id="sn" placeholder="VD: Quỹ mua nhà"><label>Số tiền gửi (đ)</label><input id="sa" type="number" inputmode="numeric"><label>Lãi suất (%/năm)</label><input id="sr" type="number" step="0.01" value="5"><label>Kỳ hạn (tháng, 0 = không kỳ hạn)</label><input id="st" type="number" value="6"><label>Ngày gửi</label><input id="sd" type="date" value="'+TODAY+'"><button class="pri" onclick="saveSav()">Tạo sổ</button>')}
@@ -701,7 +728,7 @@ function mtxO(y,m){return mtx(y,m).filter(function(t){return OVM=='all'||t.by==O
 function nw(id){var all=!id||id=='all',F=function(x){return all||x.by==id},s=0,l=0,b=0;
   S.sv.filter(F).forEach(function(v){if(!v.closed)s+=svVal(v)});
   S.loans.filter(F).forEach(function(x){var r=x.amt-paid(x);if(r>0){if(x.kind=='lend')l+=r;else b+=r}});
-  var iv=S.inv.filter(F).reduce(function(a,p){return a+invVal(p)},0),cd=S.cc.filter(function(x){return !x.p&&F(x)}).reduce(function(a,x){return a+x.amt},0),c=avail(id);return{c:c,s:s,l:l,b:b,d:cd,i:iv,n:c+s+l-b-cd}}
+  var iv=S.inv.filter(F).reduce(function(a,p){return a+invVal(p)},0),cd=S.cc.filter(function(x){return !isPaid(x)&&F(x)}).reduce(function(a,x){return a+x.amt},0),c=avail(id);return{c:c,s:s,l:l,b:b,d:cd,i:iv,n:c+s+l-b-cd}}
 function ovChips(){return '<div class="card" style="padding:8px"><div style="display:flex;gap:6px;overflow-x:auto">'+[{id:'all',name:'Cả gia đình'}].concat(S.members).map(function(m){return '<button class="chip'+(OVM==m.id?' es':'')+'" style="white-space:nowrap;padding:6px 12px;font-size:13px" onclick="OVM=\''+m.id+'\';render()">'+esc(m.name)+'</button>'}).join('')+'</div></div>'}
 function vMembers(){
   if(OVM!='all'||S.members.length<2)return '';
