@@ -27,6 +27,7 @@
 
 
 
+
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--tx:#1c2530;--mut:#6b7785;--line:#e6e9ee;--pri:#0f9d7a;--in:#0f9d7a;--out:#e5484d;--warn:#d98a00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1b2128;--tx:#e8edf2;--mut:#93a0ae;--line:#2a323b;--pri:#2cc29c;--in:#2cc29c;--out:#ff6b70;--warn:#f0b03a;color-scheme:dark}}
@@ -701,15 +702,22 @@ function avail(id){var all=!id||id=='all',F=function(x){return all||x.by==id},d=
 function meM(){return S.members.filter(function(x){return x.id==ME})[0]}
 function openSheet(){sheet('<b>Số dư ban đầu</b><p class="mut">Số tiền bạn đang có trước khi bắt đầu ghi sổ (tiền mặt, tài khoản…). Dùng để tính nguồn tiền dư.</p><label>Số tiền (đ)</label><input id="so" type="number" inputmode="numeric" value="'+((meM()||{}).open||'')+'"><button class="pri" onclick="saveOpen()">Lưu</button>')}
 function saveOpen(){var m=meM();if(m)m.open=+document.getElementById('so').value||0;save();cl();render()}
+function mflow(y,m,id){
+  var all=!id||id=='all',F=function(x){return all||x.by==id},key=y+'-'+pad(m+1),a=mtx(y,m).filter(F),r={i:sum(a,'in'),o:sum(a,'out'),sd:0,sp:0,ii:0,io:0,n:a.length};
+  S.sv.filter(F).forEach(function(v){if(v.date.slice(0,7)==key){r.sd+=v.amt;r.n++}if(v.closed&&v.cdate&&v.cdate.slice(0,7)==key){r.sp+=v.payout!=null?v.payout:svVal(v);r.n++}});
+  S.inv.filter(F).forEach(function(p){p.ents.forEach(function(e){if(!e.bal)return;var dk=(e.t=='inc'?(e.pd||e.date):e.date).slice(0,7);if(dk==key){if(e.t=='inc')r.ii+=e.amt;else r.io+=e.amt;r.n++}})});
+  r.net=r.i-r.o-r.sd+r.sp+r.ii-r.io;return r;
+}
+function mdesc(f){return 'Thu '+vnd(f.i)+' − Chi '+vnd(f.o)+(f.sd?' − gửi tiết kiệm '+vnd(f.sd):'')+(f.sp?' + nhận từ tiết kiệm '+vnd(f.sp):'')+(f.io?' − đầu tư/chi phí đầu tư '+vnd(f.io):'')+(f.ii?' + thu nhập đầu tư chuyển về '+vnd(f.ii):'')}
 function vBal(){
   var rows=[],k,mx=1;
-  for(k=0;k<12;k++){var d=new Date(now.getFullYear(),now.getMonth()-k,1),a=ftx(d.getFullYear(),d.getMonth()),i=sum(a,'in'),o=sum(a,'out');if(a.length||k<1)rows.push({l:(d.getMonth()+1)+'/'+d.getFullYear(),i:i,o:o,r:i-o})}
-  rows.forEach(function(r){mx=Math.max(mx,Math.abs(r.r))});
-  var c=rows[0],sv=S.sv.filter(function(v){return !v.closed&&(FM=='all'||v.by==FM)}).reduce(function(a,v){return a+v.amt},0);
-  var h=chips()+'<div class="card"><div class="mut">Còn dư tháng '+c.l+'</div><div style="font-size:26px;font-weight:700" class="'+(c.r<0?'out':'in')+'">'+(c.r<0?'−':'')+vnd(Math.abs(c.r))+'</div><div class="mut">Thu '+vnd(c.i)+' − Chi '+vnd(c.o)+(c.i?' · giữ lại '+Math.round(c.r/c.i*100)+'% thu nhập':'')+'</div></div>';
-  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Nguồn tiền dư khả dụng'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</b>'+(FM=='all'||FM==ME?'<button class="sm" onclick="openSheet()">Số dư ban đầu</button>':'')+'</div><div style="font-size:22px;font-weight:700;margin:6px 0">'+vnd(avail(FM))+'</div><div class="mut">= số dư ban đầu + tổng thu − tổng chi − tiền đã chuyển vào sổ tiết kiệm. Đang gửi tiết kiệm: '+vnd(sv)+'.</div><button class="pri" onclick="tab(\'sav\');addSav()">Chuyển vào sổ tiết kiệm</button></div>';
+  for(k=0;k<12;k++){var d=new Date(now.getFullYear(),now.getMonth()-k,1),f=mflow(d.getFullYear(),d.getMonth(),FM);if(f.n||k<1){f.l=(d.getMonth()+1)+'/'+d.getFullYear();rows.push(f)}}
+  rows.forEach(function(r){mx=Math.max(mx,Math.abs(r.net))});
+  var c=rows[0],sv=S.sv.filter(function(v){return !v.closed&&(FM=='all'||v.by==FM)}).reduce(function(a,v){return a+v.amt},0),av=avail(FM),op=S.members.filter(function(m){return FM=='all'||m.id==FM}).reduce(function(a,m){return a+(+m.open||0)},0);
+  var h=chips()+'<div class="card"><div class="mut">Còn dư tháng '+c.l+' (đã trừ tiền gửi tiết kiệm)</div><div style="font-size:26px;font-weight:700" class="'+(c.net<0?'out':'in')+'">'+sgv(c.net)+'</div><div class="mut">'+mdesc(c)+(c.i?' · giữ lại '+Math.round(c.net/c.i*100)+'% thu nhập':'')+'</div></div>';
+  h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Nguồn tiền dư khả dụng'+(FM=='all'?'':' của '+esc(mnm(FM)))+'</b>'+(FM=='all'||FM==ME?'<button class="sm" onclick="openSheet()">Số dư ban đầu</button>':'')+'</div><div style="font-size:22px;font-weight:700;margin:6px 0">'+vnd(av)+'</div><div class="mut">= số dư ban đầu ('+vnd(op)+') + cộng dồn còn dư các tháng ('+sgv(av-op)+'). Đang gửi tiết kiệm: '+vnd(sv)+'.</div><button class="pri" onclick="tab(\'sav\');addSav()">Chuyển vào sổ tiết kiệm</button></div>';
   h+='<div class="card"><b>Còn dư theo tháng</b>';
-  rows.forEach(function(r){h+='<div class="row"><div class="grow"><b>Tháng '+r.l+'</b><div class="bar"><div style="width:'+Math.abs(r.r)/mx*100+'%;background:'+(r.r<0?'var(--out)':'var(--in)')+'"></div></div></div><b class="'+(r.r<0?'out':'in')+'">'+(r.r<0?'−':'+')+vnd(Math.abs(r.r))+'</b></div>'});
+  rows.forEach(function(r){h+='<div class="row"><div class="grow"><div style="display:flex;justify-content:space-between"><b>Tháng '+r.l+'</b><b class="'+(r.net<0?'out':'in')+'">'+(r.net<0?'−':'+')+vnd(Math.abs(r.net))+'</b></div><div class="bar"><div style="width:'+Math.abs(r.net)/mx*100+'%;background:'+(r.net<0?'var(--out)':'var(--in)')+'"></div></div><small>'+mdesc(r)+'</small></div></div>'});
   return h+'</div>';
 }
 function addSav(){sheet('<b>Mở sổ tiết kiệm</b><p class="mut">Tiền gửi chỉ được trừ từ số dư của chính bạn. Khả dụng: <b>'+vnd(avail(ME))+'</b></p><label>Tên sổ</label><input id="sn" placeholder="VD: Quỹ mua nhà"><label>Số tiền gửi (đ)</label><input id="sa" type="number" inputmode="numeric"><label>Lãi suất (%/năm)</label><input id="sr" type="number" step="0.01" value="5"><label>Kỳ hạn (tháng, 0 = không kỳ hạn)</label><input id="st" type="number" value="6"><label>Ngày gửi</label><input id="sd" type="date" value="'+TODAY+'"><button class="pri" onclick="saveSav()">Tạo sổ</button>')}
